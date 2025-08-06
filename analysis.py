@@ -3025,7 +3025,6 @@ def odour_analysis(df, data_type):
     ax = sns.barplot(x='lim_type', y='trials_on_reversal', data=df2, errorbar='ci', palette=palette_plots, order=['SR', 'joint_inf_priors'])
     ax.set_xticklabels(['feature', 'joint'])
     plt.ylabel('Attempts on block switches')
-    ax.get_legend().set_visible(False)
     plt.xlabel('Trial number')
     plt.tight_layout()
     plt.savefig('figures/fig7_odour_task_block' + data_type + '.pdf', dpi=500, bbox_inches='tight', format='pdf')
@@ -3165,7 +3164,7 @@ if __name__ == '__main__':
         # save_import(df, df_prob1, df_prob2, noise, df_prob_split1, df_prob_split2, df_split1, df_split2, df_split3,df_split4, df_control1, df_control2, data_type, import_folder)
 
     if data_type == 'fig_1':
-        # plots fig 2c,d
+        # plots fig 2d
         df = import_dat_simple(
             data_type='fig_1', saved=True, import_folder=import_folder)
         stats_out, post_hoc_out, stats_out_2, post_hoc_out_2 = plot_fig2(df)
@@ -3206,20 +3205,14 @@ if __name__ == '__main__':
 
     if data_type == 'DNMS':
         # import
-        import_folder = '/Users/jpasslack/Documents/transfer_to_cluster/odour_paper/'
-        df = import_dat_simple(data_type='struct_disc', saved=False, import_folder=import_folder)
-        #import_folder = 'Data/'
-        #save_import_simple(df, import_folder)
+        df = import_dat_simple(data_type=data_type, saved=True, import_folder=import_folder)
 
         # fig 7b/c
-        block_stats, stats_out, post_hoc_out = odour_analysis(df, block, data_type)
+        block_stats, stats_out, post_hoc_out = odour_analysis(df, data_type)
 
     if data_type == 'struct_disc':
         # import
-        import_folder = "/Users/jpasslack/Documents/transfer_to_cluster/odour_task_rerun/"  # (lim=1350) or is it "/Users/jpasslack/Documents/transfer_to_cluster/O5/"? (lim=1400)
-        df = import_dat_simple(data_type='struct_disc', saved=False, import_folder=import_folder)
-        #import_folder = 'Data/'
-        #save_import_simple(df, import_folder)
+        df = import_dat_simple(data_type=data_type, saved=True, import_folder=import_folder)
 
         # fig 7e/f
-        block_stats, stats_out, post_hoc_out = odour_analysis(df, block, data_type)
+        block_stats, stats_out, post_hoc_out = odour_analysis(df, data_type)
