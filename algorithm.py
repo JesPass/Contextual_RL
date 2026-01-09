@@ -3085,9 +3085,11 @@ if __name__ == '__main__':
     run_single = False  # runs a single agent, generates figure 1b example plots
     run_on = 'multi_node'  # 'single_node' multiprocessing on a single node; if not run on multiple nodes
     # request number of cores corresponding to len(index) in run_opts function
-    # for revisions run: 'cue', 'random', 'block_10', 'block_20', 'block_30', 'block_40', split up groups
-    data_type = 'noise_block_1'  # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
-    # for different setups data_type in ['cue_random', 'cue_block_10', 'cue_block_20', 'cue_block_30', 'cue_block_40', 'noise_random', 'noise_block_10', 'noise_block_20', 'noise_block_30', 'noise_block_40']
+    data_type = 'noise'  # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
+    # for revisions:
+    # CR maps ['cue_CR_outcome', 'noise_CR_outcome']
+    # different block lengths ['cue_block_5', 'cue_block_10', 'cue_block_20', 'cue_block_30', 'cue_block_40', 'noise_block_5', 'noise_block_10', 'noise_block_20', 'noise_block_30', 'noise_block_40', 'noise_block_70', 'noise_block_100', 'cue_block_70', 'cue_block_100', 'cue_block_1', 'noise_block_1']
+    # different block probabilities ['cue_random', 'cue_prob4', 'cue_prob10', 'cue_prob20', 'cue_prob30', 'cue_prob40', 'noise_random', 'noise_prob4', 'noise_prob10', 'noise_prob20', 'noise_prob30', 'noise_prob30']
     # data_type must be set here and in chosen_ones function above!
 
     rand_init_adds_here = [10, 15, 20, 25, 30, 35, 40, 45]
