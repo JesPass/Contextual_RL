@@ -21,7 +21,7 @@ def agent_run(learner, rewards, world):
     return learner
 
 
-def episode_run(world, learner, ret_n_trials, ret_perf):
+def episode_run(world, learner, ret_n_trials, ret_perf, CR_record):
     task_tot = 0
 
     prob_record_start = []
@@ -30,6 +30,9 @@ def episode_run(world, learner, ret_n_trials, ret_perf):
     state_record_end = []
     prob_record_rand = []
     state_record_rand = []
+    CR_recorded = []
+    prob_record_CR = []
+    state_record_all = []
 
     for task_num in world.tasks:
         rewards, starting_state = world.create_task(task_num)
@@ -41,6 +44,9 @@ def episode_run(world, learner, ret_n_trials, ret_perf):
         state_record_end_int = []
         prob_record_rand_int = []
         state_record_rand_int = []
+        CR_map_int = []
+        prob_record_all_int = []
+        state_record_all_int = []
 
         performance = 0
         n_trial = 0
@@ -54,6 +60,9 @@ def episode_run(world, learner, ret_n_trials, ret_perf):
                 state_record_end_int2 = []
                 state_record_rand_int2 = []
                 prob_record_rand_int2 = []
+                CR_map_int2 = []
+                prob_record_all_int2 = []
+                state_record_all_int2 = []
 
                 rewards, starting_state = world.create_task(task_num)
                 learner.reset(world)
@@ -92,7 +101,13 @@ def episode_run(world, learner, ret_n_trials, ret_perf):
                             if task_tot >= 1400:
                                 # record data from last 100 random trials
                                 state_record_rand_int.append(flat_state)  # location
-                                prob_record_rand_int.append(learner.importance_weights)  # probability of tasks
+                                prob_record_rand_int.append(learner.importance_weights)  # probability of tasks\
+                            if (task_tot >= 500) & (task_tot < 1000):
+                                if CR_record:
+                                    CR_map_int.append(learner.CR_maps_all)
+                            prob_record_all_int.append(learner.importance_weights)
+                            state_record_all_int.append(flat_state)
+
                         if n_trial >= world.trials:
                             perform_ave = sum(learner.correct_visits[-world.trials:])
                         performance = sum(learner.correct_visits[-n_trial:])
@@ -109,6 +124,11 @@ def episode_run(world, learner, ret_n_trials, ret_perf):
                             # record data from last 100 random trials
                             state_record_rand_int2.append(state_record_rand_int)  # location
                             prob_record_rand_int2.append(prob_record_rand_int)  # probability of tasks
+                        if (task_tot >= 500) & (task_tot < 1000):
+                            if CR_record:
+                                CR_map_int2.append(CR_map_int)
+                        prob_record_all_int2.append(prob_record_all_int)
+                        state_record_all_int2.append(state_record_all_int)
 
             ret_n_trials.append(n_trial)
         else:
@@ -142,9 +162,15 @@ def episode_run(world, learner, ret_n_trials, ret_perf):
             # record data from last 100 random trials
             state_record_rand.append(state_record_rand_int2)  # location
             prob_record_rand.append(prob_record_rand_int2)  # probability of tasks
+        if (task_tot >= 500) & (task_tot < 1000):
+            if CR_record:
+                CR_recorded.append(CR_map_int2)  # CR maps on last 100 random trials
+
+        prob_record_CR.append(prob_record_all_int2)  # records probabilities
+        state_record_all.append(state_record_all_int2)
 
     learner.analyze_me(world)
-    return ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record_rand, prob_record_rand
+    return ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record_rand, prob_record_rand, CR_recorded, prob_record_CR, state_record_all
 
 
 def dual_agent_run(learner, learner_feature, rewards, world, SR_error, n_trial, task_type):
@@ -233,6 +259,10 @@ def dual_episode_run(world, learner, learner_feature, ret_n_trials, ret_perf, re
     prob_record_end = []
     state_record_end = []
 
+    state_record_all = []
+    prob_record_SR = []
+    prob_record_CR = []
+
     world.current_act_task = 1
 
     default_counter = 0
@@ -285,6 +315,10 @@ def dual_episode_run(world, learner, learner_feature, ret_n_trials, ret_perf, re
         prob_record_end_int2 = []
         state_record_end_int2 = []
 
+        state_record_all_int2 = []
+        prob_record_SR_int2 = []
+        prob_record_CR_int2 = []
+
         while perform_ave < world.trials:
             learner.reset(world)
             learner_feature.reset(world)
@@ -308,6 +342,10 @@ def dual_episode_run(world, learner, learner_feature, ret_n_trials, ret_perf, re
             prob_record_end_int = []
             state_record_end_int = []
 
+            state_record_all_int = []
+            prob_record_SR_int = []
+            prob_record_CR_int = []
+
             while flat_state not in world.goal_state:
                 learner, learner_feature = dual_agent_run(learner, learner_feature, rewards, world, SR_error, n_trial,
                                                           world.inf_task)
@@ -330,6 +368,9 @@ def dual_episode_run(world, learner, learner_feature, ret_n_trials, ret_perf, re
                 if task_tot >= 800 & task_tot < 1000:
                     prob_record_end_int.append(learner_feature.importance_weights)
                     state_record_end_int.append(flat_state)
+                state_record_all_int.append(flat_state)  # locations
+                prob_record_SR_int.append(learner_feature.importance_weights)  # records probabilities
+                prob_record_CR_int.append(learner.importance_weights)  # records probabilities
             if n_trial >= world.trials:
                 perform_ave = sum(learner.correct_visits[-world.trials:])
             performance = sum(learner.correct_visits[-n_trial:])
@@ -365,6 +406,9 @@ def dual_episode_run(world, learner, learner_feature, ret_n_trials, ret_perf, re
             if task_tot >= 800 & task_tot < 1000:
                 prob_record_end_int2.append(prob_record_end_int)
                 state_record_end_int2.append(state_record_end_int)
+            state_record_all_int2.append(state_record_all_int)  # locations
+            prob_record_SR_int2.append(prob_record_SR_int)  # records probabilities
+            prob_record_CR_int2.append(prob_record_CR_int)  # records probabilities
 
         # #retrograde replay states and rewards at end of all episodes
         if world.replay:
@@ -387,11 +431,15 @@ def dual_episode_run(world, learner, learner_feature, ret_n_trials, ret_perf, re
             prob_record_end.append(prob_record_end_int2)
             state_record_end.append(state_record_end_int2)
 
+        state_record_all.append(state_record_all_int2) # locations
+        prob_record_SR.append(prob_record_SR_int2)  # records probabilities
+        prob_record_CR.append(prob_record_CR_int2)  # records probabilities
+
         ret_n_trials.append(n_trial)
         world.current_act_task = task_num
 
     learner.analyze_me(world)
-    return ret_perf, ret_n_trials, out_conf_list, feat_conf_list, err, SR_record, state_record, prob_record, prob_record_start, state_record_start, prob_record_end, state_record_end, SR_record_start
+    return ret_perf, ret_n_trials, out_conf_list, feat_conf_list, err, SR_record, state_record, prob_record, prob_record_start, state_record_start, prob_record_end, state_record_end, SR_record_start, state_record_all, prob_record_SR, prob_record_CR
 
 
 class Agent:
@@ -2209,7 +2257,7 @@ class EnvironmentT(Environment):
 
 def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue, limit, outcome,
                  arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR, single_TD,
-                 single_SR_unlearning, record_SRs, inf_task):
+                 single_SR_unlearning, record_SRs, inf_task, CR_record):
     noise_input = noise_here
     # tasks = [1,2] * 40
     # trials = 5
@@ -2261,6 +2309,18 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
     prob_end = []
     states_end = []
 
+    # revision lists
+    trial_outcomes = []
+    task_ids = []
+    locations = []
+    probabilities_SR = []
+    probabilities_CR = []
+    CR_maps = []
+    CR_recorded = []
+    state_record_all = []  # records locations
+    prob_record_SR = [] # records probabilities
+    prob_record_CR = [] #prob_record_CR
+
     for run in np.arange(5):  # number of agents per file
         random.seed(run + rand_init_add)
         np.random.seed(run + rand_init_add)
@@ -2285,6 +2345,127 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
             tasks_rand = np.random.choice([1, 2, 3, 4],
                                           500).tolist()  # involves making a different choice, learning this will be hard and would require outcome niference?
             tasks = ([1] * 50 + [4] * 50) * 6 + ([2] * 50 + [1] * 50 + [3] * 50 + [4] * 50) * 5 + tasks_rand
+
+        # test for block->interleaved strucutre: inf_task = ['random', 'block_10', 'block_20', 'block_30', 'block_40']
+        elif inf_task in ['cue_random', 'noise_random']:
+            conc = 0.1
+            stickiness = 5
+            tasks = np.random.choice([1, 2], 1500).tolist()
+            tasks_rand = tasks[-500:]
+            inf_task = 'local'
+        elif inf_task in ['cue_block_1', 'noise_block_1']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = ([1] + [2]) * 500 + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_block_5', 'noise_block_5']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = ([1] * 5 + [2] * 5) * 100 + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_block_10', 'noise_block_10']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = ([1] * 10 + [2] * 10) * 50 + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_block_20', 'noise_block_20']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = ([1] * 20 + [2] * 20) * 25 + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_block_30', 'noise_block_30']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = ([1] * 30 + [2] * 30) * 17 + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_block_40', 'noise_block_40']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = ([1] * 40 + [2] * 40) * 13 + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_block_70', 'noise_block_70']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = ([1] * 70 + [2] * 70) * 8 + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_block_100', 'noise_block_100']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = ([1] * 100 + [2] * 100) * 5 + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_prob4', 'noise_prob4']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = []
+            for block in np.arange(10):
+                task_1 = np.array([1] * 48 + [2] * 2)
+                np.random.shuffle(task_1)
+                task_2 = np.array([2] * 48 + [1] * 2)
+                np.random.shuffle(task_2)
+                tasks = tasks + task_1.tolist() + task_2.tolist()
+            tasks = tasks + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_prob10', 'noise_prob10']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = []
+            for block in np.arange(10):
+                task_1 = np.array([1] * 45 + [2] * 5)
+                np.random.shuffle(task_1)
+                task_2 = np.array([2] * 45 + [1] * 5)
+                np.random.shuffle(task_2)
+                tasks = tasks+task_1.tolist()+task_2.tolist()
+            tasks = tasks + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_prob20', 'noise_prob20']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = []
+            for block in np.arange(10):
+                task_1 = np.array([1] * 40 + [2] * 10)
+                np.random.shuffle(task_1)
+                task_2 = np.array([2] * 40 + [1] * 10)
+                np.random.shuffle(task_2)
+                tasks = tasks+task_1.tolist()+task_2.tolist()
+            tasks = tasks + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_prob30', 'noise_prob30']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = []
+            for block in np.arange(10):
+                task_1 = np.array([1] * 35 + [2] * 15)
+                np.random.shuffle(task_1)
+                task_2 = np.array([2] * 35 + [1] * 15)
+                np.random.shuffle(task_2)
+                tasks = tasks+task_1.tolist()+task_2.tolist()
+            tasks = tasks + tasks_rand
+            inf_task = 'local'
+        elif inf_task in ['cue_prob40', 'noise_prob40']:
+            conc = 0.1
+            stickiness = 5
+            tasks_rand = np.random.choice([1, 2], 500).tolist()
+            tasks = []
+            for block in np.arange(10):
+                task_1 = np.array([1] * 30 + [2] * 20)
+                np.random.shuffle(task_1)
+                task_2 = np.array([2] * 30 + [1] * 20)
+                np.random.shuffle(task_2)
+                tasks = tasks+task_1.tolist()+task_2.tolist()
+            tasks = tasks + tasks_rand
+            inf_task = 'local'
         else:
             conc = 0.1
             stickiness = 5
@@ -2319,8 +2500,8 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
                                   particle_full=False,
                                   kalman_SR=False, kalman=True, multi=False, conc=conc, covariance_tracking=out_cov,
                                   TD=td, kalman_TD=kalm_td, fake_outcome=fake_out)
-            ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record, prob_record = episode_run(
-                world, learner, ret_n_trials, ret_perf)
+            ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record, prob_record, CR_recorded, prob_record_CR, state_record_all = episode_run(
+                world, learner, ret_n_trials, ret_perf, CR_record)
             SR_record = []
             SR_record_start = []
 
@@ -2328,8 +2509,8 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
             ret_perf = []
             ret_n_trials = []
             learner = SR_SF_Agent(world, starting_state=0, kalman_SR=True, kalman=False, TD=False, kalman_TD=False)
-            ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record, prob_record = episode_run(
-                world, learner, ret_n_trials, ret_perf)
+            ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record, prob_record, CR_recorded, prob_record_CR, state_record_all = episode_run(
+                world, learner, ret_n_trials, ret_perf, CR_record)
             SR_record = []
             SR_record_start = []
 
@@ -2338,8 +2519,8 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
             ret_perf = []
             ret_n_trials = []
             learner = SR_SF_Agent(world, starting_state=0, kalman_SR=True, kalman=True, TD=False, kalman_TD=False)
-            ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record, prob_record = episode_run(
-                world, learner, ret_n_trials, ret_perf)
+            ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record, prob_record, CR_recorded, prob_record_CR, state_record_all = episode_run(
+                world, learner, ret_n_trials, ret_perf, CR_record)
             SR_record = []
             SR_record_start = []
 
@@ -2347,8 +2528,8 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
             ret_perf = []
             ret_n_trials = []
             learner = SR_SF_Agent(world, starting_state=0, kalman_SR=False, kalman=False, TD=True, kalman_TD=True)
-            ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record, prob_record = episode_run(
-                world, learner, ret_n_trials, ret_perf)
+            ret_perf, ret_n_trials, prob_record_start, state_record_start, prob_record_end, state_record_end, state_record, prob_record, CR_recorded, prob_record_CR, state_record_all = episode_run(
+                world, learner, ret_n_trials, ret_perf, CR_record)
             SR_record = []
             SR_record_start = []
 
@@ -2371,7 +2552,7 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
             ret_n_trials = []
             ret_perf = []
 
-            ret_perf, ret_n_trials, out_conf_list, feat_conf_list, err, SR_record, state_record, prob_record, prob_record_start, state_record_start, prob_record_end, state_record_end, SR_record_start = dual_episode_run(
+            ret_perf, ret_n_trials, out_conf_list, feat_conf_list, err, SR_record, state_record, prob_record, prob_record_start, state_record_start, prob_record_end, state_record_end, SR_record_start, state_record_all, prob_record_SR, prob_record_CR = dual_episode_run(
                 world, learner,
                 learner_feature,
                 ret_n_trials, ret_perf, record_SRs)
@@ -2393,16 +2574,16 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
         per_corr_500 = len(try_me[try_me == 1])
 
         trials = np.array(ret_n_trials[-100:])
-        tasks = np.array(tasks_rand[-100:])
-        task_1 = trials[tasks == 1]
-        task_2 = trials[tasks == 2]
+        tasks_here = np.array(tasks_rand[-100:])
+        task_1 = trials[tasks_here == 1]
+        task_2 = trials[tasks_here == 2]
         per_corr_100_task1 = len(task_1[task_1 == 1]) / len(task_1)
         per_corr_100_task2 = len(task_2[task_2 == 1]) / len(task_2)
 
         trials = np.array(ret_n_trials[-500:-400])
-        tasks = np.array(tasks_rand[-500:-400])
-        task_1 = trials[tasks == 1]
-        task_2 = trials[tasks == 2]
+        tasks_here = np.array(tasks_rand[-500:-400])
+        task_1 = trials[tasks_here == 1]
+        task_2 = trials[tasks_here == 2]
         per_corr_500_task1 = len(task_1[task_1 == 1]) / len(task_1)
         per_corr_500_task2 = len(task_2[task_2 == 1]) / len(task_2)
 
@@ -2512,12 +2693,25 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
         num_to_switch_incorr_trials = num_to_switch[num_to_switch != 1]
         inc_switch_500_task2.append(np.mean(num_to_switch_incorr_trials))
 
-    return steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start
+        # needed for learning curve
+        trial_outcomes.append(ret_n_trials)  # number of tries to reverse
+        task_ids.append(tasks)  # task identities
+        # analysis: plot proportion correct around reversals in 1 plot?
+
+        # needed for probability comparison within trials
+        locations.append(state_record_all)  # records locations
+        probabilities_SR.append(prob_record_SR)  # records probabilities
+        probabilities_CR.append(prob_record_CR)  # records probabilities
+        CR_maps.append(CR_recorded)  # last 100 CR maps
+        # analysis: once well learnt probability colormaps in each state (last 500 block and last 100 random trials)
+
+    return steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations,probabilities_SR, probabilities_CR, CR_maps
 
 
 def chosen_ones(i):
     # define data type here!
-    data_type = 'cue_SRstart'  # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
+    data_type = 'noise_block_1' # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
+    # for different setups data_type in ['random', 'block_10', 'block_20', 'block_30', 'block_40']
 
     if 'noise' in data_type:
         noise_here = True  # set up whether noise or cue task
@@ -2540,6 +2734,7 @@ def chosen_ones(i):
     single_TD = False
     single_SR_unlearning = False
     record_SRs = False
+    CR_record = False
 
     td = 1  # turns on TD for decision making
     kalm_td = 1  # use kalman learning rate for TD maps
@@ -2560,7 +2755,7 @@ def chosen_ones(i):
         record_SRs = True  # careful these files are large (up to 20GB)
 
     if data_type in ['noise', 'cue']:
-        groups = ['switching_SR', 'joint_inf_priors', 'outcome']
+        groups = ['switching_SR', 'joint_inf_priors']
 
     if data_type in ['fig_1']:
         groups = ['single_SR', 'single_TD', 'single_SR_unlearning']
@@ -2571,6 +2766,17 @@ def chosen_ones(i):
 
     if data_type in ['struct_disc', 'DNMS']:
         groups = ['switching_SR', 'joint_inf_priors']
+
+    # testing for different training structures
+    if data_type in ['cue_random', 'cue_block_5', 'cue_block_10', 'cue_block_20', 'cue_block_30', 'cue_block_40', 'noise_random', 'noise_block_5', 'noise_block_10', 'noise_block_20', 'noise_block_30', 'noise_block_40', 'noise_block_70', 'noise_block_100', 'cue_block_70', 'cue_block_100', 'cue_block_1', 'noise_block_1']:
+        groups = ['switching_SR', 'joint_inf_priors', 'outcome']
+
+    if data_type in ['cue_prob4', 'cue_prob10', 'cue_prob20', 'cue_prob30', 'cue_prob40', 'noise_prob4', 'noise_prob10', 'noise_prob20', 'noise_prob30', 'noise_prob30']:
+        groups = ['switching_SR', 'joint_inf_priors', 'outcome']
+
+    if data_type in ['cue_CR_outcome', 'noise_CR_outcome']:
+        groups = ['outcome']
+        CR_record = True # records CRs on last 500 block trials
 
     input_list = [cues, arm_lengths, groups, rand_init_adds]
     inputs = list(itertools.product(*input_list))
@@ -2590,10 +2796,10 @@ def chosen_ones(i):
                 cov[0]) + '_cov_out_' + str(cov[1]) + str(rand_init_add) + 'td' + str(td) + 'kalmtd' + str(
                 kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat) + 'data_type' + str(data_type)
             print(filename)
-            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
                 joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue,
                 limit, outcome, arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR,
-                single_TD, single_SR_unlearning, record_SRs, data_type)
+                single_TD, single_SR_unlearning, record_SRs, data_type, CR_record)
             with open(filename, "wb") as fp:  # Pickling
                 pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                              steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2604,18 +2810,18 @@ def chosen_ones(i):
                              percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2,
                              inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100,
                              SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                             num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                             num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
     elif group == 'outcome':
         outcome = True
         out_cov = 1
         filename = str(arm_length) + '_' + group + '_cov_out_' + str(out_cov) + str(rand_init_add) + 'td' + str(
-            td) + 'kalmtd' + str(kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat)
+            td) + 'kalmtd' + str(kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat) + 'data_type' + str(data_type)
         print(filename)
-        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
             joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue, limit, outcome,
             arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR, single_TD,
-            single_SR_unlearning, record_SRs, data_type)
+            single_SR_unlearning, record_SRs, data_type, CR_record)
         with open(filename, "wb") as fp:  # Pickling
             pickle.dump(
                 [steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100,
@@ -2625,7 +2831,7 @@ def chosen_ones(i):
                  percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1,
                  percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500,
                  inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100,
-                 num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end],
+                 num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps],
                 fp)
 
     elif group == 'replay':
@@ -2640,10 +2846,10 @@ def chosen_ones(i):
             cov[0]) + '_cov_out_' + str(cov[1]) + str(rand_init_add) + 'td' + str(td) + 'kalmtd' + str(
             kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat)
         print(filename)
-        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
             joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue, limit, outcome,
             arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR, single_TD,
-            single_SR_unlearning, record_SRs, data_type)
+            single_SR_unlearning, record_SRs, data_type, CR_record)
         with open(filename, "wb") as fp:  # Pickling
             pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                          steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2654,7 +2860,7 @@ def chosen_ones(i):
                          percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2,
                          inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100,
                          prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                         num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                         num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
     elif group == 'joint_inf_priors':
         joint_prior = True
@@ -2674,10 +2880,10 @@ def chosen_ones(i):
             kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat) + 'lim' + str(
             limit) + 'data_type' + str(data_type)
         print(filename)
-        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
             joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue, limit, outcome,
             arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR, single_TD,
-            single_SR_unlearning, record_SRs, data_type)
+            single_SR_unlearning, record_SRs, data_type, CR_record)
         with open(filename, "wb") as fp:  # Pickling
             pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                          steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2688,7 +2894,7 @@ def chosen_ones(i):
                          percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2,
                          inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100,
                          prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                         num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                         num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
     elif group == 'explore':
         # has pre-exploration phase and has map at the beginning of stuff, switching SR, pre-exploration and covariance transferred to task 1/task 2 maps
@@ -2702,10 +2908,10 @@ def chosen_ones(i):
                 cov[0]) + '_cov_out_' + str(cov[1]) + str(rand_init_add) + 'td' + str(td) + 'kalmtd' + str(
                 kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat)
             print(filename)
-            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
                 joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue,
                 limit, outcome, arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR,
-                single_TD, single_SR_unlearning, record_SRs, data_type)
+                single_TD, single_SR_unlearning, record_SRs, data_type, CR_record)
             with open(filename, "wb") as fp:  # Pickling
                 pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                              steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2716,7 +2922,7 @@ def chosen_ones(i):
                              percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2,
                              inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100,
                              SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                             num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                             num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
     elif group == 'fc':
         # has forced choice at the beginning, switching SR
@@ -2731,10 +2937,10 @@ def chosen_ones(i):
                 cov[0]) + '_cov_out_' + str(cov[1]) + str(rand_init_add) + 'td' + str(td) + 'kalmtd' + str(
                 kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat) + '_fc'
             print(filename)
-            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
                 joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue, limit, outcome,
                 arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR, single_TD,
-                single_SR_unlearning, record_SRs, data_type)
+                single_SR_unlearning, record_SRs, data_type, CR_record)
             with open(filename, "wb") as fp:  # Pickling
                 pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                              steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2745,7 +2951,7 @@ def chosen_ones(i):
                              percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2,
                              inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100,
                              SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                             num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                             num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
     elif group == 'rew_feat':
         # has forced choice at the beginning, switching SR
@@ -2759,10 +2965,10 @@ def chosen_ones(i):
                 cov[0]) + '_cov_out_' + str(cov[1]) + str(rand_init_add) + 'td' + str(td) + 'kalmtd' + str(
                 kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat)
             print(filename)
-            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
                 joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue, limit, outcome,
                 arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR, single_TD,
-                single_SR_unlearning, record_SRs, data_type)
+                single_SR_unlearning, record_SRs, data_type, CR_record)
             with open(filename, "wb") as fp:  # Pickling
                 pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                              steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2773,7 +2979,7 @@ def chosen_ones(i):
                              percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2,
                              inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100,
                              SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                             num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                             num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
     elif group == 'fake_out':
         # fake outcome during learning
@@ -2790,10 +2996,10 @@ def chosen_ones(i):
                 cov[0]) + '_cov_out_' + str(cov[1]) + str(rand_init_add) + 'td' + str(td) + 'kalmtd' + str(
                 kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat)
             print(filename)
-            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+            steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
                 joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue, limit, outcome,
                 arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR, single_TD,
-                single_SR_unlearning, record_SRs, data_type)
+                single_SR_unlearning, record_SRs, data_type, CR_record)
             with open(filename, "wb") as fp:  # Pickling
                 pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                              steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2804,7 +3010,7 @@ def chosen_ones(i):
                              percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2,
                              inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100,
                              SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                             num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                             num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
     elif group == 'single_SR':
         single_SR = True
@@ -2812,10 +3018,10 @@ def chosen_ones(i):
             rand_init_add) + 'td' + str(td) + 'kalmtd' + str(
             kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat)
         print(filename)
-        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
             joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue,
             limit, outcome, arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR,
-            single_TD, single_SR_unlearning, record_SRs, data_type)
+            single_TD, single_SR_unlearning, record_SRs, data_type, CR_record)
         with open(filename, "wb") as fp:  # Pickling
             pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                          steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2826,7 +3032,7 @@ def chosen_ones(i):
                          percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2,
                          inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100,
                          prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                         num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                         num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
     elif group == 'single_SR_unlearning':
         single_SR_unlearning = True
@@ -2834,10 +3040,10 @@ def chosen_ones(i):
             rand_init_add) + 'td' + str(td) + 'kalmtd' + str(
             kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat)
         print(filename)
-        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
             joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue,
             limit, outcome, arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR,
-            single_TD, single_SR_unlearning, record_SRs, data_type)
+            single_TD, single_SR_unlearning, record_SRs, data_type, CR_record)
         with open(filename, "wb") as fp:  # Pickling
             pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                          steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2848,7 +3054,7 @@ def chosen_ones(i):
                          percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2,
                          inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100,
                          prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                         num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                         num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
     elif group == 'single_TD':
         single_TD = True
@@ -2856,10 +3062,10 @@ def chosen_ones(i):
             rand_init_add) + 'td' + str(td) + 'kalmtd' + str(
             kalm_td) + 'fake_out' + str(fake_out) + 'rew_feat' + str(reward_feat)
         print(filename)
-        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start = run_multiple(
+        steps_record_500, steps_record_400, steps_record_300, steps_record_200, steps_record_100, trials_on_reversal, percent_correct_100, percent_correct_200, percent_correct_300, percent_correct_400, percent_correct_500, n_switch_100, n_switch_200, n_switch_300, n_switch_400, n_switch_500, trials_on_reversal_task1, trials_on_reversal_task2, percent_correct_100_task1, percent_correct_100_task2, percent_correct_500_task1, percent_correct_500_task2, inc_switch_100, inc_switch_100_task1, inc_switch_100_task2, inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100, SRs_100, prob_100, states_100, num_attempts_trials_start, prob_start, states_start, num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps = run_multiple(
             joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_cov, reward_feat, cue,
             limit, outcome, arm_length, rand_init_add, td, kalm_td, fake_out, noise_here, explore, fc, single_SR,
-            single_TD, single_SR_unlearning, record_SRs, data_type)
+            single_TD, single_SR_unlearning, record_SRs, data_type, CR_record)
         with open(filename, "wb") as fp:  # Pickling
             pickle.dump([steps_record_500, steps_record_400, steps_record_300, steps_record_200,
                          steps_record_100, trials_on_reversal, percent_correct_100,
@@ -2871,7 +3077,7 @@ def chosen_ones(i):
                          inc_switch_500, inc_switch_500_task1, inc_switch_500_task2, num_attempts_trials_100,
                          SRs_100,
                          prob_100, states_100, num_attempts_trials_start, prob_start, states_start,
-                         num_attempts_trials_end, prob_end, states_end, SRs_start], fp)
+                         num_attempts_trials_end, prob_end, states_end, SRs_start, trial_outcomes, task_ids, locations, probabilities_SR, probabilities_CR, CR_maps], fp)
 
 
 if __name__ == '__main__':
@@ -2879,7 +3085,9 @@ if __name__ == '__main__':
     run_single = False  # runs a single agent, generates figure 1b example plots
     run_on = 'multi_node'  # 'single_node' multiprocessing on a single node; if not run on multiple nodes
     # request number of cores corresponding to len(index) in run_opts function
-    data_type = 'cue_SRstart'  # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
+    # for revisions run: 'cue', 'random', 'block_10', 'block_20', 'block_30', 'block_40', split up groups
+    data_type = 'noise_block_1'  # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
+    # for different setups data_type in ['cue_random', 'cue_block_10', 'cue_block_20', 'cue_block_30', 'cue_block_40', 'noise_random', 'noise_block_10', 'noise_block_20', 'noise_block_30', 'noise_block_40']
     # data_type must be set here and in chosen_ones function above!
 
     rand_init_adds_here = [10, 15, 20, 25, 30, 35, 40, 45]
@@ -2889,7 +3097,7 @@ if __name__ == '__main__':
         groups_here = ['switching_SR', 'joint_inf_priors']
 
     if data_type in ['noise', 'cue']:
-        groups_here = ['switching_SR', 'joint_inf_priors', 'outcome']
+        groups_here = ['switching_SR', 'joint_inf_priors']
 
     if data_type in ['fig_1']:
         groups_here = ['switching_SR', 'outcome', 'single_SR', 'single_TD', 'single_SR_unlearning']
@@ -2901,6 +3109,16 @@ if __name__ == '__main__':
     if data_type in ['struct_disc', 'DNMS']:
         arm_lengths_here = [3]
         groups_here = ['switching_SR', 'joint_inf_priors']
+
+    # testing for different training structures
+    if data_type in ['cue_CR_outcome', 'noise_CR_outcome']:
+        groups_here = ['outcome']
+
+    if data_type in ['cue_random', 'cue_block_5', 'cue_block_10', 'cue_block_20', 'cue_block_30', 'cue_block_40', 'noise_random', 'noise_block_5', 'noise_block_10', 'noise_block_20', 'noise_block_30', 'noise_block_40', 'noise_block_70', 'noise_block_100', 'cue_block_70', 'cue_block_100', 'cue_block_1', 'noise_block_1']:
+        groups_here = ['switching_SR', 'joint_inf_priors', 'outcome']
+
+    if data_type in ['cue_prob4', 'cue_prob10', 'cue_prob20', 'cue_prob30', 'cue_prob40', 'noise_prob4', 'noise_prob10', 'noise_prob20', 'noise_prob30', 'noise_prob30']:
+        groups_here = ['switching_SR', 'joint_inf_priors', 'outcome']
 
     if run_opts:
         if run_on == 'single_node':
