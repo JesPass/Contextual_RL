@@ -2755,7 +2755,7 @@ def fig_3(df, noise):
     return stats_out, post_hoc_out
 
 
-def fig_4a(df, noise, metric):
+def fig_supp_7(df, noise, metric):
     stats=[]
     post=[]
     metrics = [metric] #'percent_correct_100', 'dist_perf1', 'dist_perf2', 'trials_on_reversal'
@@ -2791,7 +2791,7 @@ def fig_4a(df, noise, metric):
             plt.ylabel('Performance on random trials')
         sns.despine()
         plt.tight_layout()
-        plt.savefig('figures_1/fig_limitsa' + metric + add + '.pdf', dpi=500, bbox_inches='tight', format='pdf')
+        plt.savefig('figures/supp_7_limits' + metric + add + '.pdf', dpi=500, bbox_inches='tight', format='pdf')
         plt.show()
 
         #statistics
@@ -3891,7 +3891,7 @@ def expand_diff(df):
 if __name__ == '__main__':
 
     # To generate plots enter data_type and import folder location:
-    data_type = 'struct_disc'  # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
+    data_type = 'struct_disc'  # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS; for revisions: 'noise_revisions', 'cue_revisions', 'cue_dist', 'noise_dist', 'noise_train', 'cue_train', 'noise_probs', 'cue_probs', 'CR_outcome'
     import_folder = 'Data/'  # folder/file management is setup for mac
 
     import_folder = '/exports/eddie/scratch/jpasslac/successor/'
@@ -4028,21 +4028,22 @@ if __name__ == '__main__':
         df = import_dat_revisions(data_type, saved=True, import_folder=import_folder)
         #save_import_simple(df, import_folder)
 
-        plot_learning = False
+        #supp 3-6
+        plot_learning = True
         if plot_learning:
             # Learning curves
             # Plotting number of attempts over whole time course
-            df_sel=df[['lim_type', 'trial_outcomes', 'len', 'id_here']]
+            df_sel=df[['lim_type', 'trial_outcomes', 'len', 'id_here']] #TODO save this to make it smaller
             df_exp=df_sel.explode(['trial_outcomes'])
             df_exp['trial_num'] = df_exp.groupby(['len', 'lim_type', 'id_here']).cumcount() + 1
             df_exp['trial_num'] = df_exp['trial_num'].astype('float')
             df_exp['len'] = df_exp['len'].astype('float')
             df_exp = df_exp[df_exp['trial_num']<1000]
 
-            #Supp 2:
+            #Supp 3/4:
             palette_plots = format_plot()
-            for len in [2, 15, 20]:
-                df_plot1 = df_exp[df_exp['len'].isin([len])]
+            for len_here in [2, 15, 20]:
+                df_plot1 = df_exp[df_exp['len'].isin([len_here])]
                 for alg in df_plot1['lim_type'].unique():
                     df_plot = df_plot1[df_plot1['lim_type']==alg]
                     sns.lineplot(x='trial_num', y='trial_outcomes', hue='lim_type', data=df_plot, legend=False, palette=palette_plots, estimator=np.median)
@@ -4052,7 +4053,7 @@ if __name__ == '__main__':
                     plt.gca().set_ylim(bottom=0)
                     sns.despine()
                     plt.tight_layout()
-                    plt.savefig('figures_11/curve_noise_a' + str(len) +alg + add+ '.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                    plt.savefig('figures/supp3_4' + str(len_here) +alg + add+ '.pdf', dpi=500, bbox_inches='tight', format='pdf')
                     plt.show()
 
             df_exp['alg_type'] = df_exp['lim_type']
@@ -4063,13 +4064,13 @@ if __name__ == '__main__':
             stats_out = pg.mixed_anova(dv='trial_outcomes', between='alg_type', within='len', subject='id_here', data=stats_me)
             post_hoc_out = pg.pairwise_tests(dv='trial_outcomes', between='alg_type', within='len', subject='id_here', data=stats_me, padjust='bonf', parametric=True, interaction=False)
             
-            #supp_3 A top
+            #supp 5/6 top/block switch
             #plot performance on incongruent trials
             df_lens = df_exp[df_exp['len'].isin([2,15,20])]
             palette_plots = format_plot()
             df_lens_incon = df_lens[df_lens['trial_num'].isin(np.arange(51,1000,50))]
-            for len in [2, 15, 20]:
-                df_plot1 = df_lens_incon[df_lens_incon['len'].isin([len])]
+            for len_here in [2, 15, 20]:
+                df_plot1 = df_lens_incon[df_lens_incon['len'].isin([len_here])]
                 df_plot1['switch_num'] = df_plot1.groupby(['lim_type', 'id_here']).cumcount()
                 sns.lineplot(x='switch_num', y='trial_outcomes', hue='lim_type', data=df_plot1, legend=False, palette=palette_plots, estimator=np.median, marker='o')
                 plt.xlabel('Switch number')
@@ -4078,7 +4079,7 @@ if __name__ == '__main__':
                 plt.gca().set_ylim(bottom=0)
                 plt.tight_layout()
                 sns.despine()
-                plt.savefig('figures_11/curve_noise_c' + str(len) + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                plt.savefig('figures/supp5_6_switch' + str(len_here + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
             df_lens_incon['alg_type'] = df_lens_incon['lim_type']
@@ -4098,24 +4099,7 @@ if __name__ == '__main__':
             out, out2 = anova_mixed_effects_x(stats_me, 'len', 'trial_outcomes')
             
 
-            #A bottom
-            #prop correct
-            df_lens = df_exp[df_exp['len'].isin([2,15,20])]
-            palette_plots = format_plot()
-            df_lens_incon = df_lens[df_lens['trial_num'].isin(np.arange(51,1000,50))]
-            for len in [2, 15, 20]:
-                df_plot1 = df_lens_incon[df_lens_incon['len'].isin([len])]
-                df_plot1['trial_outcomes'] = 1/df_plot1['trial_outcomes']
-                sns.lineplot(x='trial_num', y='trial_outcomes', hue='lim_type', data=df_plot1, legend=False, palette=palette_plots, estimator=np.median)
-                plt.xlabel('Trial number')
-                plt.ylabel('Proportion correct')
-                plt.ylim(0,1.05)
-                sns.despine()
-                plt.tight_layout()
-                #plt.savefig('figures_11/learning_noise_b' + str(len) + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
-                plt.show()
-            
-                    
+            #supp 5/6 bottom within block
             #performance on congruent trials
             df_lens_con = df_lens[~df_lens['trial_num'].isin(np.arange(51,1000,50))]
             df_lens_con['block'] = 0
@@ -4129,8 +4113,8 @@ if __name__ == '__main__':
             df_lens_2 = df_lens_con.groupby(['lim_type', 'len', 'id_here', 'block']).mean()
             df_lens_2 = df_lens_2.reset_index()
 
-            for len in [2, 15, 20]:
-                df_plot1 = df_lens_2[df_lens_2['len'].isin([len])]
+            for len_here in [2, 15, 20]:
+                df_plot1 = df_lens_2[df_lens_2['len'].isin([len_here])]
                 sns.lineplot(x='block', y='trial_outcomes', hue='lim_type', data=df_plot1, legend=False, palette=palette_plots, estimator=np.median, marker='o')
                 plt.xlabel('Block number')
                 plt.ylabel('Number of attempts')
@@ -4138,7 +4122,7 @@ if __name__ == '__main__':
                 plt.gca().set_ylim(bottom=0)
                 sns.despine()
                 plt.tight_layout()
-                plt.savefig('figures_11/learning_noise_c' + str(len) + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                plt.savefig('figures/supp5_6_block' + str(len_here) + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
             
             df_lens_2['alg_type'] = df_lens_2['lim_type']
@@ -4155,8 +4139,9 @@ if __name__ == '__main__':
             stats_me['trial_num'] = stats_me['trial_num'].astype('float')
             out, out2 = anova_mixed_effects_x(stats_me, 'len', 'trial_outcomes')
 
-            for len in [2, 15, 20]:
-                df_plot1 = df_lens_2[df_lens_2['len'].isin([len])]
+            #proportions
+            for len_here in [2, 15, 20]:
+                df_plot1 = df_lens_2[df_lens_2['len'].isin([len_here])]
                 df_plot1['trial_outcomes'] = 1/df_plot1['trial_outcomes']
                 sns.lineplot(x='block', y='trial_outcomes', hue='lim_type', data=df_plot1, legend=False, palette=palette_plots, estimator=np.median, marker='o')
                 plt.xlabel('Block number')
@@ -4164,26 +4149,14 @@ if __name__ == '__main__':
                 plt.ylim(0,1.05)
                 sns.despine()
                 plt.tight_layout()
-                plt.savefig('figures_11/learning_noise_d' + str(len) + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                plt.savefig('figures/supp5_6_block_prop' + str(len_here) + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
         plot_probs = True
         if plot_probs:
-            # generate probability analysis
-            saved = False
-            #max map and correct/incorrect labels
             saved_trials = True
             #data in right format to calculate max map with specific parameters
-            if saved:
-                folder = import_folder
-                #open
-                all_dat = pd.DataFrame()
-                for lim_type in ['joint_inf_priors', 'SR', 'outcome']:
-                    with open(import_folder +'all_probs'+lim_type, "rb") as fp:  # Unpickling# print(file)
-                        dat = pickle.load(fp)
-                    all_dat = pd.concat([all_dat, dat])
-                df_all = all_dat
-            elif saved_trials:
+            if saved_trials:
                 #open
                 all_dat = pd.DataFrame()
                 for lim_type in ['joint_inf_priors', 'SR', 'outcome']:
@@ -4198,315 +4171,12 @@ if __name__ == '__main__':
                 max_map = False
                 trial_mean, df_all = revision_data_processing(df, max_map, data_type)
 
-            # Question 1: How do SR/CR solve task?
-            # Probability maps on correct trials, last 100 random trials and last 500 blocks
-            # Probability maps on trial type switch last attempt and preceeding atempt
-            # ->peak at cue vs at reward
-            plot_Q1 = False
-            if plot_Q1:
-                def switch_prev(df):
-                    prec = max(df['attempt_num'].unique())-1
-                    df = df[df['attempt_num'] == prec]
-                    return df 
-
-                def expand_diff(df):
-                    if sum(df['Switches'].values)!=0:
-                        df['Switches'] = 1
-                    return df
-                
-                def plot_grid(max_cell_list, task, alg):
-                    pot_len = 2
-                    grid = np.zeros((7, pot_len + 1))
-                    grid[0, pot_len] = max_cell_list[5]
-                    grid[1, pot_len] = max_cell_list[4]
-                    grid[2, pot_len] = max_cell_list[3]
-                    grid[4, pot_len] = max_cell_list[6]
-                    grid[5, pot_len] = max_cell_list[7]
-                    grid[6, pot_len] = max_cell_list[8]
-
-                    for gr in np.arange(2):
-                        grid[3, gr] = max_cell_list[gr]
-                    if pot_len > 2:
-                        for gr in np.arange(pot_len - 1):
-                            grid[3, 2 + gr] = max_cell_list[9 + gr]
-                    grid[3, pot_len] = max_cell_list[2]
-                    #for with cue
-                    #grid[2, 1] = max_cell_list[-2]
-                    #grid[4, 1] = max_cell_list[-1]
-
-                    # Plot task 1 max cells
-                    if task == 1:
-                        colors = 'RdPu'
-                    if task == 2:
-                        colors = 'Oranges'
-                    #plt.imshow(np.log10(grid), cmap=colors, vmin=-3, vmax=0.5)
-                    plt.imshow(grid, cmap=colors, vmin=0, vmax=1)
-                    plt.margins(x=0)
-                    plt.axis('off')
-                    plt.colorbar()
-                    plt.savefig('figures_3/supporting_map' + str(task) +alg + '.pdf', dpi=500, bbox_inches='tight', format='pdf')
-                    plt.show()
-
-                def pick_max(trial_mean, type):
-                    def select_max_map(df_in, type):
-                        #pick out only correct trials
-                        df = df_in[df_in['trial_outcomes']==1]
-
-                        #get mean across trials
-                        df = df.groupby(['len', 'lim_type', 'id_here', 'task_ids', 'locations', 'map_num']).mean() #mean within agent
-                        df = df.reset_index()
-
-                        # select decision point locations (at choice point flat_state==2) to find map id for each agent
-                        decision_points = df[df['locations'] == 2] #this should be a single number for each map
-
-                        #for each task identity find the max map
-                        for task_id in [1,2]:
-                            int = decision_points[decision_points['task_ids']==task_id]
-                            #find the maximum probabilities SR+probabilities CR map/2 at the decision point
-                            if df_in['lim_type'].iloc[0] =='SR':
-                                joint_est = np.array(int['probabilities_SR'].values)
-                            elif df_in['lim_type'].iloc[0] =='outcome':
-                                joint_est = np.array(int['probabilities_CR'].values)
-                            else:
-                                if type in [951,1400]:
-                                    joint_est = np.array(int['probabilities_SR'].values)
-                                else:
-                                    joint_est = (np.array(int['probabilities_SR'].values) + np.array(int['probabilities_CR'].values))/2
-                            corr_maps = np.array(int['map_num'].values)
-                            index = np.argmax(joint_est)
-                            max_map=corr_maps[index]
-                            df_in['max_map'+str(task_id)] = max_map
-                        return df_in
-
-                    # pick out the max map
-                    if type in [951, 51]:
-                        trial_mean = trial_mean[trial_mean['trial_num'].isin(np.arange(type-50, type+50))]
-                    trial_mean = trial_mean.groupby(['len', 'lim_type', 'id_here']).apply(select_max_map, (type))
-                    trial_mean = trial_mean.reset_index(drop = True)
-
-                    correct_probs = trial_mean[((trial_mean['map_num']==trial_mean['max_map1']) & (trial_mean['task_ids']==1)) | ((trial_mean['map_num']==trial_mean['max_map2']) & (trial_mean['task_ids']==2))]
-                    correct_probs['correct'] = np.array([10]*len(correct_probs))+correct_probs['task_ids'].values
-                    incorrect_probs = trial_mean[((trial_mean['map_num']==trial_mean['max_map1']) & (trial_mean['task_ids']==2)) | ((trial_mean['map_num']==trial_mean['max_map2']) & (trial_mean['task_ids']==1))]
-                    incorrect_probs['correct'] = np.array([20]*len(incorrect_probs))+incorrect_probs['task_ids'].values
-                    all_probs = pd.concat([correct_probs, incorrect_probs])
-                    
-                    all_probs.loc[all_probs['lim_type']=='outcome', 'probabilities_SR'] = 0
-                    all_probs.loc[all_probs['lim_type']=='SR', 'probabilities_CR'] = 0
-                    return all_probs
-
-                
-                #propability maps
-                palette_plots = format_plot()
-                df_all2 = df_all
-                plotted_dat = pd.DataFrame()
-                for plot_type in ['random','block_SR', 'block_outcome']:  #'block'
-                    for correct_type in ['correct', 'switch_prev', 'switch_last']: #'correct', 'switch_prev'
-                        df_rand = df_all2[df_all2['len']==2] 
-                        if plot_type=='random':
-                            df_rand = df_rand[df_rand['trial_num'].isin(np.arange(1400,1500))]
-                            df_rand = df_rand[df_rand['lim_type']=='SR']
-                            df_rand = pick_max(df_rand, 0)
-                            df_rand = df_rand[['len', 'lim_type', 'id_here', 'trial_num', 'task_ids','locations', 'probabilities_SR', 'probabilities_CR', 'trial_outcomes', 'incorrect_attempts', 'attempt_num', 'correct']]
-                        elif plot_type=='block_SR':
-                            df_rand = df_rand[df_rand['trial_num'].isin(np.arange(500,1000))]
-                            df_rand = df_rand[df_rand['lim_type'].isin(['SR'])]
-                            df_rand = pick_max(df_rand, 0)
-                            df_rand = df_rand[['len', 'lim_type', 'id_here', 'trial_num', 'task_ids','locations', 'probabilities_SR', 'probabilities_CR', 'trial_outcomes', 'incorrect_attempts', 'attempt_num', 'correct']]
-                        elif plot_type=='block_outcome':
-                            df_rand = df_rand[df_rand['trial_num'].isin(np.arange(500,1000))]
-                            df_rand = df_rand[df_rand['lim_type'].isin(['outcome'])]
-                            df_rand = pick_max(df_rand, 0)
-                            df_rand = df_rand[['len', 'lim_type', 'id_here', 'trial_num', 'task_ids','locations', 'probabilities_SR', 'probabilities_CR', 'trial_outcomes', 'incorrect_attempts', 'attempt_num', 'correct']]
-                        
-                        df_rand = df_rand.sort_values(['len', 'lim_type', 'id_here', 'trial_num', 'attempt_num'])
-                        if correct_type =='correct':
-                            df_rand = df_rand[df_rand['trial_outcomes']==1] #correct trials
-                        elif correct_type == 'switch_last':
-                            df_rand['Switches'] = df_rand.groupby(['len', 'lim_type', 'id_here', 'trial_num']).diff()['task_ids']
-                            #df_rand.loc[df_rand['trial_num'].isin([0,500,1400]), 'Switches'] = 0
-                            df_rand = df_rand.groupby(['len', 'lim_type', 'id_here', 'trial_num', 'correct']).apply(expand_diff)
-                            df_rand = df_rand.reset_index(drop=True)
-                            df_rand = df_rand[df_rand['Switches']!=0] #where switches occur
-                            df_rand = df_rand[df_rand['incorrect_attempts']==0] #correct attempt
-                            #df_rand = df_rand[df_rand['trial_outcomes']!=1] #correct trials
-                            #pick out only incorrect trials
-                        elif correct_type == 'switch_prev':
-                            df_rand['Switches'] = df_rand.groupby(['len', 'lim_type', 'id_here', 'trial_num']).diff()['task_ids']
-                            #df_rand.loc[df_rand['trial_num'].isin([0,500,1400]), 'Switches'] = 0
-                            df_rand = df_rand.groupby(['len', 'lim_type', 'id_here', 'trial_num', 'correct']).apply(expand_diff)
-                            df_rand = df_rand.reset_index(drop=True)
-                            df_rand = df_rand.sort_values(['len', 'lim_type', 'id_here', 'trial_num', 'attempt_num'])
-                            df_rand = df_rand[df_rand['Switches']!=0] #where switches occur
-                            df_rand = df_rand.groupby(['len', 'lim_type', 'id_here', 'trial_num', 'task_ids', 'correct']).apply(switch_prev)
-                            df_rand = df_rand.reset_index(drop=True)
-
-                        #ave across trials
-                        probs_per_trial = df_rand.groupby(['len', 'lim_type', 'id_here', 'task_ids', 'locations', 'correct']).mean() #average across trials
-                        probs_per_trial = probs_per_trial.reset_index()
-                        
-                        probs_per_trial_rec = probs_per_trial.copy(deep=True)
-                        probs_per_trial_rec['plot_type']=plot_type
-                        probs_per_trial_rec['correct_type']=correct_type
-                        plotted_dat=pd.concat([plotted_dat, probs_per_trial_rec])
-
-                        #across agents
-                        probs_per_trial = probs_per_trial.groupby(['len', 'lim_type', 'task_ids', 'locations', 'correct']).mean() #average across agents
-                        probs_per_trial = probs_per_trial.reset_index()
-                        probs_per_trial = probs_per_trial.sort_values(['locations'])
-
-
-                        for lim_type in probs_per_trial['lim_type'].unique():
-                            if lim_type == 'SR':
-                                var = 'probabilities_SR'
-                            elif lim_type == 'outcome':
-                                var = 'probabilities_CR'
-
-                            all_locs = set(np.arange(0,9))
-
-                            task1 = probs_per_trial[(probs_per_trial['correct'].isin([11])) & (probs_per_trial['task_ids']==1)]
-                            filled_locs = set(task1['locations'].unique())
-                            diff = all_locs.difference(filled_locs)
-                            task1 = task1.reset_index(drop=True)
-                            for filler in diff:
-                                task1.loc[task1.shape[0]] = [0]*task1.shape[1]
-                                task1.loc[task1.shape[0]-1, 'lim_type'] = lim_type
-                                task1.loc[task1.shape[0]-1, 'locations'] = filler
-                            task1 = task1.sort_values(['locations'])
-                            locations_task1 = task1[var].values.tolist()
-
-                            task2 = probs_per_trial[(probs_per_trial['correct'].isin([12])) & (probs_per_trial['task_ids']==2)]
-                            filled_locs = set(task2['locations'].unique())
-                            diff = all_locs.difference(filled_locs)
-                            task2 = task2.reset_index(drop=True)
-                            for filler in diff:
-                                task2.loc[task2.shape[0]] = [0]*task2.shape[1]
-                                task2.loc[task2.shape[0]-1, 'lim_type'] = lim_type
-                                task2.loc[task2.shape[0]-1, 'locations'] = filler
-                            task2 = task2.sort_values(['locations'])
-                            locations_task2 = task2[var].values.tolist()
-
-                            print(lim_type)
-                            print(plot_type)
-                            print(correct_type)
-                            print('task_1')
-                            plot_grid(locations_task1, task = 1, alg=lim_type+plot_type+correct_type)
-                            print('task_2')
-                            plot_grid(locations_task2, task = 2, alg=lim_type+plot_type+correct_type)
-
-                #statistics
-                df_lens_incon = plotted_dat.copy(deep=True)
-                df_lens_incon.loc[df_lens_incon['lim_type']=='outcome','probabilities_SR'] = df_lens_incon[df_lens_incon['lim_type']=='outcome']['probabilities_CR']
-                df_lens_incon2 = df_lens_incon[df_lens_incon['correct'].isin([11,12])]
-                stats_me = df_lens_incon2[['id_here', 'probabilities_SR', 'correct_type','plot_type', 'locations', 'task_ids', 'lim_type']]
-                stats_me['probabilities_SR'] = stats_me['probabilities_SR'].astype('float')
-                #pre hoc Linear Mixed Effects Model
-                md = smf.mixedlm("probabilities_SR ~ plot_type * correct_type * task_ids * locations", stats_me, groups=stats_me['id_here'])
-                mdf = md.fit()
-                print(mdf.summary())
-                # Posthoc group comparisons averaged over time using estimated marginal means comparison
-                comps = comparisons(mdf, by=['plot_type', 'correct_type'])
-                out2 = pd.DataFrame(comps, columns=comps.columns)
-                out3 = out2[(out2['term']=='plot_type') & (out2['p_value']>=0.05)]
-                out4 = out2[(out2['term']=='correct_type') & (out2['p_value']>=0.05)]
-                
-                comps = comparisons(mdf, by=['locations', 'plot_type', 'correct_type'])
-                out2 = pd.DataFrame(comps, columns=comps.columns)
-                out3 = out2[(out2['term']=='plot_type') & (out2['p_value']>=0.05) & (out2['locations'].isin([1,5,8]))]
-
-
-                #evolution of probabilities over attempts depending on attempt number
-                #blocks and rand
-                palette_plots = format_plot()
-                df_all2 = df_all
-                df_randin = df_all2
-                plotted_dat = pd.DataFrame()
-                for plot_type in ['random_SR', 'block_SR', 'block_outcome']:
-                    for corr_id in [[11,12], [21,22]]:
-                        df_rand = df_randin[df_randin['len']==2]
-                        if plot_type=='random_SR':
-                            df_rand = df_rand[df_rand['trial_num'].isin(np.arange(1400,1500))]
-                            df_rand = df_rand[df_rand['lim_type'].isin(['SR'])]
-                            df_rand = pick_max(df_rand, 0)
-                        elif plot_type=='block_SR':
-                            df_rand = df_rand[df_rand['trial_num'].isin(np.arange(500,1000))]
-                            df_rand = df_rand[df_rand['lim_type'].isin(['SR'])]
-                            df_rand = pick_max(df_rand, 0)
-                        elif plot_type=='block_outcome':
-                            df_rand = df_rand[df_rand['trial_num'].isin(np.arange(500,1000))]
-                            df_rand = df_rand[df_rand['lim_type'].isin(['outcome'])]
-                            df_rand = pick_max(df_rand, 0)
-                        df_rand = df_rand[df_rand['correct'].isin(corr_id)] #correct vs incorrect map
-                        #label switches
-                        df_rand = df_rand.sort_values(['len', 'lim_type', 'id_here', 'trial_num', 'attempt_num'])
-                        df_rand['Switches'] = df_rand.groupby(['len', 'lim_type', 'id_here', 'trial_num']).diff()['task_ids']
-                        df_rand = df_rand.groupby(['len', 'lim_type', 'id_here', 'trial_num', 'correct']).apply(expand_diff)
-                        df_rand = df_rand.reset_index(drop=True)
-                        df_rand = df_rand[df_rand['Switches']!=0] #where switches occur
-
-                        probs_per_trial = df_rand.groupby(['len', 'lim_type', 'id_here', 'trial_outcomes', 'correct', 'attempt_num']).mean() #average across trials but keep number of attempts separate
-                        probs_per_trial = probs_per_trial.reset_index()
-
-                        for lim_type in probs_per_trial['lim_type'].unique():
-                            if lim_type == 'SR':
-                                var = 'probabilities_SR'
-                            elif lim_type == 'outcome':
-                                var = 'probabilities_CR'
-                            print(corr_id)
-                            print(lim_type)
-                            print(plot_type)
-                            probs_per_trial2 = probs_per_trial[probs_per_trial['lim_type'] == lim_type]
-                            
-                            probs_per_trial_rec = probs_per_trial2.copy(deep=True)
-                            if corr_id == [11,12]:
-                                probs_per_trial_rec['corr_id'] = 'correct'
-                            else:
-                                probs_per_trial_rec['corr_id'] = 'incorrect'
-                            probs_per_trial_rec['plot_type'] = plot_type
-
-                            plotted_dat = pd.concat([plotted_dat.copy(deep=True), probs_per_trial_rec.copy(deep=True)])
-
-                            pal = sns.cubehelix_palette(max(probs_per_trial2['trial_outcomes'].unique())+1)
-                            for attempt_nums in np.sort(probs_per_trial2['trial_outcomes'].unique()):
-                                probs_plot = probs_per_trial2[probs_per_trial2['trial_outcomes']==attempt_nums]
-                                sns.lineplot(x='attempt_num', y=var, data=probs_plot, legend=True, color=pal[int(attempt_nums)], marker='o')
-                            if corr_id == [11,12]:
-                                plt.ylabel('Prob corr map')
-                            else:
-                                plt.ylabel('Prob incor map')
-                            plt.xlabel('Attempt number')
-                            plt.ylim(-0.01,1)
-                            sns.despine()
-                            plt.tight_layout()
-                            #plt.savefig('figures_3/attempts' + str(corr_id) + plot_type +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
-                            plt.show()
-
-                import matplotlib as mpl
-                colors = sns.cubehelix_palette(as_cmap=True)
-                fig, ax = plt.subplots(figsize=(1, 6), layout='constrained')
-                cmap = colors
-                norm = mpl.colors.Normalize(vmin=0, vmax=1)
-                fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation='vertical')
-                plt.axis('off')
-                #plt.savefig('figures_3/cbar.pdf', dpi=500, bbox_inches='tight', format='pdf')
-
-                df_lens_incon = plotted_dat.copy(deep=True)
-                df_lens_incon.loc[df_lens_incon['lim_type']=='outcome','probabilities_SR'] = df_lens_incon[df_lens_incon['lim_type']=='outcome']['probabilities_CR']
-                stats_me = df_lens_incon[['id_here', 'probabilities_SR', 'plot_type', 'corr_id', 'trial_outcomes', 'attempt_num']]
-                stats_me['probabilities_SR'] = stats_me['probabilities_SR'].astype('float')
-                #pre hoc Linear Mixed Effects Model
-                md = smf.mixedlm("probabilities_SR ~ plot_type * corr_id * trial_outcomes * attempt_num", stats_me, groups=stats_me['id_here'])
-                mdf = md.fit()
-                print(mdf.summary())
-                # Posthoc group comparisons averaged over time using estimated marginal means comparison
-                comps = comparisons(mdf, by=['plot_type'])
-                out2 = pd.DataFrame(comps, columns=comps.columns)
-                out3 = out2[(out2['term']=='plot_type') & (out2['p_value']>=0.05)]
-
-            # Question 2: How does supporting OI with FI during learning work?
+            # Question 1: How does supporting OI with FI during learning work?
+            # supp 8/9
             # On first reversal (first reversal is most important: learning plots, incorrect updates, joint limits)
             # ->OI adapts faster by bigger inferred probs
-            plot_Q2 = True
-            if plot_Q2:
+            plot_Q1 = True
+            if plot_Q1:
 
                 #select specific maps
                 def pick_max(trial_mean, type):
@@ -4559,91 +4229,6 @@ if __name__ == '__main__':
                     all_probs.loc[all_probs['lim_type']=='outcome', 'probabilities_SR'] = 0
                     all_probs.loc[all_probs['lim_type']=='SR', 'probabilities_CR'] = 0
                     return all_probs
-    
-                plotted_dat = pd.DataFrame()
-                for loop in [1,2]:
-                    if loop==3:
-                        first_rev = df_all[df_all['trial_num']==151] #51 for first joint 151 for last joint
-                    if loop==1:
-                        df_all = pick_max(all_dat, type=51)
-                        first_rev = df_all[df_all['trial_num']==51] #51 for first joint 151 for last joint
-                    if loop==2:
-                        df_all = pick_max(all_dat, type=951)
-                        first_rev = df_all[df_all['trial_num']==951]
-
-                    probs_per_trial = first_rev.groupby(['len', 'lim_type', 'id_here', 'trial_num', 'correct', 'attempt_num']).mean() #average across locations
-                    probs_per_trial = probs_per_trial.reset_index()
-                    probs_per_trial = probs_per_trial[['len', 'lim_type', 'id_here', 'correct', 'trial_num', 'attempt_num', 'probabilities_SR', 'probabilities_CR']]
-
-                    # ev of probs
-                    probs_per_trial['alg_type'] = probs_per_trial['lim_type']
-                    for alg in ['both', 'ind']:
-                        for length in [2, 15, 20]:
-                            for corr_id in [[21,22]]:
-                                df_plot = probs_per_trial[probs_per_trial['len'].isin([length])]
-                                df_plot = df_plot[df_plot['correct'].isin(corr_id)]
-                                if alg=='ind':
-                                    df_plot = df_plot[df_plot['lim_type'].isin(['SR', 'outcome'])]
-                                    df_plot.loc[df_plot['lim_type']=='outcome', 'probabilities_SR'] = df_plot['probabilities_CR']
-                                    val = 'probabilities_SR'
-                                    df_plot['value']=df_plot['probabilities_SR']
-                                else:
-                                    df_plot = df_plot[df_plot['lim_type'].isin(['joint_inf_priors'])]
-                                    df_plot = pd.melt(df_plot, id_vars=['len', 'lim_type', 'id_here', 'correct', 'trial_num', 'attempt_num', 'alg_type'])
-                                    df_plot = df_plot.reset_index()
-                                    val='value'
-                                    df_plot.loc[df_plot['variable']=='probabilities_SR', 'lim_type']='SR'
-                                    df_plot.loc[df_plot['variable']=='probabilities_CR', 'lim_type']='outcome'
-
-                                print(length)
-                                print(alg)
-                                print(corr_id)
-                                df_plot['tp'] = loop
-                                plotted_dat= pd.concat([plotted_dat, df_plot])
-
-                                if loop==2:
-                                    #show only SR for joint alg
-                                    if alg == 'both':
-                                        df_plot = df_plot[df_plot['lim_type']=='SR']
-
-                                palette_plots = format_plot()
-                                sns.lineplot(x='attempt_num', y=val, hue='lim_type', data=df_plot, legend=False, palette=palette_plots)
-                                plt.xlabel('Attempt number')
-                                if 11 in corr_id:
-                                    plt.ylabel('Probability corr')
-                                else:
-                                    plt.ylabel('Probability incor')
-                                plt.xlim(-1,50)
-                                plt.ylim(0,1.0)
-                                sns.despine()
-                                if loop==1:
-                                    hi = 0
-                                    plt.savefig('figures_6/supportingtopleft' + str(length) +alg +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
-                                if loop==2:
-                                    hi = 1
-                                    plt.savefig('figures_6/supportingtopright' + str(length) +alg +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
-                                if loop==3:
-                                    hi = 1
-                                    plt.savefig('figures_6/supportingtopright' + str(length) +alg +add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
-                                plt.show()
-
-                df_lens_incon = plotted_dat.copy(deep=True)
-                df_lens_incon['alg_type'] = df_lens_incon['alg_type']+df_lens_incon['lim_type']
-                df_lens_incon2 = df_lens_incon[df_lens_incon['len'].isin([2,15,20])]
-                df_lens_incon2 = df_lens_incon[df_lens_incon['attempt_num'].isin(np.arange(0,50))]
-
-                stats_me = df_lens_incon2[['id_here', 'len', 'alg_type', 'value', 'attempt_num', 'tp']]
-                stats_me['attempt_num'] = stats_me['attempt_num'].astype('float')
-                stats_me['value'] = stats_me['value'].astype('float')
-                #pre hoc Linear Mixed Effects Model
-                md = smf.mixedlm("value ~ attempt_num * alg_type * len * tp", stats_me, groups=stats_me['id_here'])
-                mdf = md.fit()
-                print(mdf.summary())
-                # Posthoc group comparisons averaged over time using estimated marginal means comparison
-                comps = comparisons(mdf, by=['alg_type','len','attempt_num', 'tp'])
-                out2 = pd.DataFrame(comps, columns=comps.columns)
-                out3 = out2[(out2['term']=='alg_type') & (out2['p_value']>=0.05)]
-                out4 = out2[(out2['term']=='tp') & (out2['p_value']>=0.05) & (out2['tp']==1)]
 
                 def add_ids(df):
                     df= df.sort_values(['id_here'])
@@ -4652,7 +4237,6 @@ if __name__ == '__main__':
                     df['ids_new'] = df['id_here'].replace(unique_ids, new_ids)
                     return df
 
-                
                 #first attempt locations
                 plotted_dat = pd.DataFrame()
                 posts= []
@@ -4741,14 +4325,13 @@ if __name__ == '__main__':
                                 sns.despine()
                                 if loop == 1:
                                     hi=1
-                                    #plt.savefig('figures_6/supportingleft' + str(length) +str(lim_types) +add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                                    plt.savefig('figures/supp8_9left' + str(length) +str(lim_types) +add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                                 if loop == 2:
                                     hi=1
-                                    #plt.savefig('figures_6/supportinglocb' + str(length) +str(lim_types) +add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                                    plt.savefig('figures/supp8_9right' + str(length) +str(lim_types) +add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                                 if loop==3:
                                     hi = 1
-                                    #plt.savefig('figures_6/supportingright' + str(length)  +str(lim_types) +add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
-                                
+                                    #plt.savefig('figures/supportingright' + str(length)  +str(lim_types) +add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                                 plt.show()
 
                     print('SR')
@@ -4767,18 +4350,6 @@ if __name__ == '__main__':
                         print(out)
                         posts.append(out2)
                         labels.append('loop' + str(loop) + 'SR' + 'len' + str(len_here))
-                    for alg_type_here in stats_me['alg_type'].unique():
-                        print(alg_type_here)
-                        stats_in = stats_me[stats_me['alg_type']==alg_type_here]
-                        stats_in = stats_in.groupby(['len']).apply(add_ids)
-                        stats_in = stats_in.reset_index(drop=True)
-                        stats_in['id_here'] = stats_in['ids_new']
-                        stats_in['id_here'] = stats_in['id_here'] + stats_in['len']*100
-                        out, out2 = anova_mixed_effects_bothx(stats_in, 'len', 'locations', 'interest')
-                        print(out)
-                        posts.append(out2)
-                        labels.append('loop' + str(loop) + 'SR' + 'alg' + str(alg_type_here))
-
 
                     print('outcome')
                     stats_me=plotted_dat[plotted_dat['lim_type']=='outcome']
@@ -4797,41 +4368,13 @@ if __name__ == '__main__':
                             print(out)
                             posts.append(out2)
                             labels.append('loop' + str(loop) + 'outcome' + 'len' + str(len_here))
-                    for alg_type_here in stats_me['alg_type'].unique():
-                        print(alg_type_here)
-                        stats_in = stats_me[stats_me['alg_type']==alg_type_here]
-                        stats_in = stats_in.groupby(['len']).apply(add_ids)
-                        stats_in = stats_in.reset_index(drop=True)
-                        stats_in['id_here'] = stats_in['ids_new']
-                        stats_in['id_here'] = stats_in['id_here'] + stats_in['len']*100
-                        out, out2 = anova_mixed_effects_bothx(stats_in, 'len', 'locations', 'interest')
-                        print(out)
-                        posts.append(out2)
-                        labels.append('loop' + str(loop) + 'outcome' + 'alg' + str(alg_type_here))
 
-
-
-                df_lens_incon = plotted_dat.copy(deep=True)
-                df_lens_incon['alg_type'] = df_lens_incon['alg_type']+df_lens_incon['lim_type']
-                df_lens_incon2 = df_lens_incon[df_lens_incon['len'].isin([2,15,20])]
-                stats_me = df_lens_incon2[['id_here', 'len', 'alg_type', 'value', 'locations', 'tp']]
-                stats_me['locations'] = stats_me['locations'].astype('float')
-                stats_me['value'] = stats_me['value'].astype('float')
-                #pre hoc Linear Mixed Effects Model
-                md = smf.mixedlm("value ~ locations * alg_type * len * tp", stats_me, groups=stats_me['id_here'])
-                mdf = md.fit()
-                print(mdf.summary())
-                # Posthoc group comparisons averaged over time using estimated marginal means comparison
-                comps = comparisons(mdf, by=['alg_type','len','tp', 'locations'])
-                out2 = pd.DataFrame(comps, columns=comps.columns)
-                out3 = out2[(out2['term']=='alg_type') & (out2['p_value']>=0.05) & (out2['alg_type']=='SRSR')]
-                out4 = out2[(out2['term']=='tp') & (out2['p_value']>=0.05) & (out2['tp']==1)]
-
-            # Question 3: Can we use their probs to figure out which one to use?
+            # Question 2: Can we use their probs to figure out which one to use?
+            # supp 15
             # look at average probabilities:
             # baseline across trials in block and random
-            plot_Q3 = True
-            if plot_Q3:
+            plot_Q2 = True
+            if plot_Q2:
                 add=data_type
                 
                 def switch_prev(df):
@@ -4858,7 +4401,7 @@ if __name__ == '__main__':
                 #pull out max probs
                 saved=True
                 if saved:
-                    with open(import_folder +data_type+'/trial_max', "rb") as fp:  # Unpickling# print(file)
+                    with open(import_folder +data_type+'/trial_max', "rb") as fp:  # Unpickling# print(file) #TODO generate trial max for noise
                         trial_mean = pickle.load(fp)
                 else:
                     trial_mean = df_all
@@ -4890,51 +4433,7 @@ if __name__ == '__main__':
                 data_types = pd.concat([first_rev, corr_block, block, corr_rand, rand])
                 data_types = data_types[['len', 'lim_type', 'id_here', 'type', 'trial_num', 'attempt_num', 'probabilities_SR']]
                 means=data_types.groupby(['len', 'lim_type', 'id_here', 'type']).mean()
-                means=means.reset_index()
-                vars=data_types.groupby(['len', 'lim_type', 'id_here', 'type']).var()
-                vars=vars.reset_index()
-
-                for len_here in [2,15,20]:
-                    print(len_here)
-                    df_plot = means[(means['len']==len_here) & (means['type'].isin(['block', 'rand']))]
-                    df_plot_var = vars[(vars['len']==len_here) & (vars['type'].isin(['block', 'rand']))]
-
-                    meanplot=True
-                    if meanplot:
-                        palette_plots = format_plot()
-                        sns.barplot(x='type', y='probabilities_SR', hue='lim_type', data=df_plot, legend=False, palette=palette_plots)
-                        plt.ylabel('Average confidence')
-                        plt.xlabel('')
-                        plt.ylim(0,1.0)
-                        sns.despine()
-                        plt.savefig('figures_7/combineA' + str(len_here) + add + '.pdf', dpi=500, bbox_inches='tight', format='pdf')
-                        plt.show()
-
-                    varplot=False
-                    if varplot:
-                        palette_plots = format_plot()
-                        sns.barplot(x='type', y='probabilities_SR', hue='lim_type', data=df_plot_var, legend=False, palette=palette_plots)
-                        plt.ylabel('Variance in confidence')
-                        plt.xticks(rotation=45, ha='right')
-                        plt.ylim(0,1.0)
-                        sns.despine()
-                        #plt.savefig('figures_4/otherprobs' + str(len_here) + '.pdf', dpi=500, bbox_inches='tight', format='pdf')
-                        plt.show()
-                
-                plotted_dat = means[(means['len'].isin([2,15,20])) & (means['type'].isin(['block', 'rand']))]
-                stats_me = plotted_dat.copy(deep=True)
-                #pre hoc Linear Mixed Effects Model
-                stats_me = stats_me[['probabilities_SR', 'type', 'lim_type', 'len', 'id_here']]
-                stats_me.columns = ['probabilities_SR', 'trial_type', 'lim_type', 'len', 'id_here']
-                stats_me['probabilities_SR'] = stats_me['probabilities_SR'].astype('float')
-                md = smf.mixedlm("probabilities_SR ~ lim_type * len * trial_type", stats_me, groups=stats_me['id_here'])
-                mdf = md.fit()
-                print(mdf.summary())
-                # Posthoc does algorithm confidence vary across len and trial type
-                comps = comparisons(mdf, by=['lim_type'])
-                out2 = pd.DataFrame(comps, columns=comps.columns)
-                out3 = out2[(out2['term']=='lim_type') & (out2['p_value']>=0.05)]
-
+                means=means.reset_index() #TODO save means to save on space
                 
                 #difference/proportion
                 def difference_out_feat(df):
@@ -4985,7 +4484,7 @@ if __name__ == '__main__':
                 plt.ylim(0,0.3)
                 plt.xlabel('Distractors around cue')
                 sns.despine()
-                plt.savefig('figures_7/combineB' +add +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                plt.savefig('figures/supp_15' +add +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
                 #do stats
@@ -5023,7 +4522,7 @@ if __name__ == '__main__':
                 #plt.ylim(0,1.0)
                 plt.xlabel('Distractors around cue')
                 sns.despine()
-                plt.savefig('figures_7/attemptsrand' +add +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                plt.savefig('figures/supp_15_attemptsrand' +add +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
                 #random prop
@@ -5042,7 +4541,7 @@ if __name__ == '__main__':
                 #plt.ylim(0,1.0)
                 plt.xlabel('Distractors around cue')
                 sns.despine()
-                plt.savefig('figures_7/attemptsrand_pro' +add +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                plt.savefig('figures/supp_15_attemptsrand_pro' +add +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
                 #blocks                
@@ -5059,72 +4558,35 @@ if __name__ == '__main__':
                 #plt.ylim(0,1.0)
                 plt.xlabel('Distractors around cue')
                 sns.despine()
-                plt.savefig('figures_7/attemptsblock' +add +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                plt.savefig('figures/supp_15_attemptsblock' +add +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
-    if data_type == 'noise_train_OG_code':
-        df = import_dat_train(data_type='noise_train', saved=False, import_folder=import_folder)
-
-        palette_plots = format_plot()
-        pal = sns.cubehelix_palette(5)
-        palette_here = {'random': pal[0], 10: pal[1], 20: pal[2], 30: pal[3], 40: pal[4]}
-
-        def get_blocks(df_in):
-            block_trials = np.array(df_in['trial_outcomes'].values[0])[500:1000]
-            task_ids = np.array(df_in['task_ids'].values[0])[500:1000]
-            task_ids_shift = np.array(df_in['task_ids'].values[0])[499:999]
-            task_ids_diff = task_ids-task_ids_shift
-            ids = np.where(~task_ids_diff==0)
-            block_trials = block_trials[ids]
-            df_in['trials_on_reversal']=np.median(block_trials)
-            return df_in
-
-        def get_rand(df_in):
-            block_trials = np.array(df_in['trial_outcomes'].values[0])[-100:]
-            df_in['percent_correct_100']=np.mean(block_trials)
-            return df_in
-
-        df2 = df.groupby(['len', 'lim_type', 'alg_type', 'id_here', 'type']).apply(get_blocks)
-        df2 = df2.reset_index(drop=True)
-        df2 = df2.groupby(['len', 'lim_type', 'alg_type', 'id_here', 'type']).apply(get_rand)
-        df2 = df2.reset_index(drop=True)
-
-        for lim_types in df['lim_type'].unique():
-            print(lim_types)
-            df_plot = df2[df2['lim_type']==lim_types]
-            sns.lineplot(x='len', y='percent_correct_100', hue='alg_type', data=df_plot, legend=False, palette=palette_here, marker='o')
-            plt.xlabel('Number of distractors')
-            plt.ylabel('Number of attempts')
-            plt.tight_layout()
-            plt.show()
-
-            sns.lineplot(x='len', y='trials_on_reversal', hue='alg_type', data=df_plot, legend=False, palette=palette_here, marker='o')
-            plt.xlabel('Number of distractors')
-            plt.ylabel('Number of attempts')
-            plt.tight_layout()
-            plt.show()
-        
     if data_type == 'cue_dist':
+        #supp 7
         #Process cue distance data
         df, df_prob1, df_prob2, noise, df_prob_split1, df_prob_split2, df_split1, df_split2, df_split3, df_split4, df_control1, df_control2 = import_dat(data_type='cue_dist2', saved=True, import_folder=import_folder)
         df=df[~df['alg_type'].isin(['outcome', 'SR'])]
         #fig a/b perf blocks/perf rand
-        stat_1, post_1 = fig_4a(df, noise=False, metric='trials_on_reversal')
-        stat_2, post_2 = fig_4a(df, noise=False, metric='percent_correct_100')
+        stat_1, post_1 = fig_supp_7(df, noise=False, metric='trials_on_reversal')
+        stat_2, post_2 = fig_supp_7(df, noise=False, metric='percent_correct_100')
 
     if data_type == 'noise_dist':
+        #supp 7
         #Process noise distance data
         df, df_prob1, df_prob2, noise, df_prob_split1, df_prob_split2, df_split1, df_split2, df_split3, df_split4, df_control1, df_control2 = import_dat(data_type='noise_dist2', saved=True, import_folder=import_folder)
         df = df[~df['alg_type'].isin(['outcome', 'SR'])]
         #fig a/b perf blocks/perf rand
-        stat_1, post_1 = fig_4a(df, noise=True, metric='trials_on_reversal')
-        stat_2, post_2 = fig_4a(df, noise=True, metric='percent_correct_100')
+        stat_1, post_1 = fig_supp_7(df, noise=True, metric='trials_on_reversal')
+        stat_2, post_2 = fig_supp_7(df, noise=True, metric='percent_correct_100')
 
     if data_type in ['noise_train', 'cue_train', 'noise_probs', 'cue_probs']:
+        #supp 11/12 and 13/14
         saved=True
         if data_type in ['noise_train', 'cue_train']:
+            # supp 11/12
             type_change = 'train'
         else:
+            # supp 13/14
             type_change = 'probs'
 
         if data_type in ['cue_train', 'cue_probs']:
@@ -5227,7 +4689,7 @@ if __name__ == '__main__':
                     plt.ylim(0, 8)
                 sns.despine()
                 plt.tight_layout()
-                #plt.savefig('figures_10/sum' + type_change+lim_types +variable + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                #plt.savefig('figures/sum' + type_change+lim_types +variable + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
                 stats_me = df_plot[['id_here', 'len', 'alg_type', variable]]
@@ -5259,7 +4721,7 @@ if __name__ == '__main__':
                     plt.ylim(-0.05,1.05)
             plt.tight_layout()
             sns.despine()
-            plt.savefig('figures_10/finish' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+            plt.savefig('figures/finish' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
             plt.show()
 
             stats_me = df_props[['id_here', 'len', 'alg_type']]
@@ -5309,7 +4771,7 @@ if __name__ == '__main__':
                     plt.gca().set_ylim(bottom=0)
                     plt.tight_layout()
                     sns.despine()
-                    plt.savefig('figures_9/switches_blocks' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                    plt.savefig('figures/switches_blocks' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                     plt.show()
 
                     stats_me = df_plot2[['id_here', 'alg_type', 'trial_outcomes', 'switch_num']]
@@ -5351,7 +4813,7 @@ if __name__ == '__main__':
                     plt.gca().set_ylim(bottom=0)
                     plt.tight_layout()
                     sns.despine()
-                    plt.savefig('figures_9/in_blocks' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                    plt.savefig('figures/in_blocks' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                     plt.show()
 
                     stats_me = df_plot1[['id_here', 'alg_type', 'trial_outcomes', 'block']]
@@ -5378,7 +4840,7 @@ if __name__ == '__main__':
                     plt.ylabel('Number of attempts')
                     plt.tight_layout()
                     sns.despine()
-                    plt.savefig('figures_10/blocksw' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                    plt.savefig('figures/blocksw' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                     plt.show()
                     
                     stats_me = df_lens_incon[['id_here', 'alg_type', 'trial_outcomes', 'switch_num']]
@@ -5411,7 +4873,7 @@ if __name__ == '__main__':
                     plt.gca().set_ylim(bottom=0)
                     sns.despine()
                     plt.tight_layout()
-                    plt.savefig('figures_10/withinblocks' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                    plt.savefig('figures/withinblocks' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                     plt.show()
 
                     stats_me = df_lens_2[['id_here', 'alg_type', 'trial_outcomes', 'block']]
@@ -5422,9 +4884,10 @@ if __name__ == '__main__':
                     print(out)
                     posts.append(out2[out2['p-corr']<0.05])
                     label.append(lim_types+'within')
-            
 
     if data_type == 'CR_outcome':
+        #TODO check if saved
+        #fig 3E bottom
         if not saved:
             df = import_dat_revisions(data_type='CR_outcome', saved=True, import_folder=import_folder)
             #save_import_simple(df, import_folder)
@@ -5468,7 +4931,7 @@ if __name__ == '__main__':
             plt.margins(x=0)
             plt.axis('off')
             plt.colorbar()
-            plt.savefig('figures_5/CR_maps' + str(task) +alg + '.pdf', dpi=500, bbox_inches='tight', format='pdf')
+            plt.savefig('figures/3E_CR_maps' + str(task) +alg + '.pdf', dpi=500, bbox_inches='tight', format='pdf')
             plt.show()
 
         palette_plots = format_plot()
