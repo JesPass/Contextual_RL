@@ -2778,6 +2778,9 @@ def chosen_ones(i):
         groups = ['outcome']
         CR_record = True # records CRs on last 500 block trials
 
+    if data_type in ['cue_dist', 'noise_dist']:
+        groups = [50,100,200,500,750,1000,1250,1500]
+
     input_list = [cues, arm_lengths, groups, rand_init_adds]
     inputs = list(itertools.product(*input_list))
 
@@ -2785,6 +2788,10 @@ def chosen_ones(i):
     arm_length = inputs[i][1]
     rand_init_add = inputs[i][3]
     group = inputs[i][2]
+
+    if data_type in ['cue_dist', 'noise_dist']:
+        limit_set = group
+        group = 'joint_inf_priors'
 
     if group == 'switching_SR':
         cov_types = [[0, 1]]  # first is feat, second is out cov tracking
@@ -2873,6 +2880,8 @@ def chosen_ones(i):
             limit = 1350
         elif data_type == 'DNMS':
             limit = 1600
+        elif data_type in ['cue_dist', 'noise_dist']:
+            limit = limit_set
         else:
             limit = 200
         filename = str(arm_length) + '_' + str(cue) + group + '_cov_feat_' + str(
@@ -3088,6 +3097,7 @@ if __name__ == '__main__':
     data_type = 'noise'  # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
     # for revisions:
     # CR maps ['cue_CR_outcome', 'noise_CR_outcome']
+    # different lengths of joint inference ['cue_dist', 'noise_dist']
     # different block lengths ['cue_block_5', 'cue_block_10', 'cue_block_20', 'cue_block_30', 'cue_block_40', 'noise_block_5', 'noise_block_10', 'noise_block_20', 'noise_block_30', 'noise_block_40', 'noise_block_70', 'noise_block_100', 'cue_block_70', 'cue_block_100', 'cue_block_1', 'noise_block_1']
     # different block probabilities ['cue_random', 'cue_prob4', 'cue_prob10', 'cue_prob20', 'cue_prob30', 'cue_prob40', 'noise_random', 'noise_prob4', 'noise_prob10', 'noise_prob20', 'noise_prob30', 'noise_prob30']
     # data_type must be set here and in chosen_ones function above!
@@ -3121,6 +3131,9 @@ if __name__ == '__main__':
 
     if data_type in ['cue_prob4', 'cue_prob10', 'cue_prob20', 'cue_prob30', 'cue_prob40', 'noise_prob4', 'noise_prob10', 'noise_prob20', 'noise_prob30', 'noise_prob30']:
         groups_here = ['switching_SR', 'joint_inf_priors', 'outcome']
+
+    if data_type in ['cue_dist', 'noise_dist']:
+        groups_here = [50,100,200,500,750,1000,1250,1500]
 
     if run_opts:
         if run_on == 'single_node':
