@@ -4564,7 +4564,7 @@ if __name__ == '__main__':
     if data_type == 'cue_dist':
         #supp 7
         #Process cue distance data
-        df, df_prob1, df_prob2, noise, df_prob_split1, df_prob_split2, df_split1, df_split2, df_split3, df_split4, df_control1, df_control2 = import_dat(data_type='cue_dist2', saved=True, import_folder=import_folder)
+        df, df_prob1, df_prob2, noise, df_prob_split1, df_prob_split2, df_split1, df_split2, df_split3, df_split4, df_control1, df_control2 = import_dat(data_type='cue_dist', saved=True, import_folder=import_folder)
         df=df[~df['alg_type'].isin(['outcome', 'SR'])]
         #fig a/b perf blocks/perf rand
         stat_1, post_1 = fig_supp_7(df, noise=False, metric='trials_on_reversal')
@@ -4573,7 +4573,7 @@ if __name__ == '__main__':
     if data_type == 'noise_dist':
         #supp 7
         #Process noise distance data
-        df, df_prob1, df_prob2, noise, df_prob_split1, df_prob_split2, df_split1, df_split2, df_split3, df_split4, df_control1, df_control2 = import_dat(data_type='noise_dist2', saved=True, import_folder=import_folder)
+        df, df_prob1, df_prob2, noise, df_prob_split1, df_prob_split2, df_split1, df_split2, df_split3, df_split4, df_control1, df_control2 = import_dat(data_type='noise_dist', saved=True, import_folder=import_folder)
         df = df[~df['alg_type'].isin(['outcome', 'SR'])]
         #fig a/b perf blocks/perf rand
         stat_1, post_1 = fig_supp_7(df, noise=True, metric='trials_on_reversal')
@@ -4689,7 +4689,7 @@ if __name__ == '__main__':
                     plt.ylim(0, 8)
                 sns.despine()
                 plt.tight_layout()
-                #plt.savefig('figures/sum' + type_change+lim_types +variable + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                plt.savefig('figures/perf' + type_change+lim_types +variable + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
                 stats_me = df_plot[['id_here', 'len', 'alg_type', variable]]
@@ -4886,8 +4886,8 @@ if __name__ == '__main__':
                     label.append(lim_types+'within')
 
     if data_type == 'CR_outcome':
-        #TODO check if saved
         #fig 3E bottom
+        saved = True
         if not saved:
             df = import_dat_revisions(data_type='CR_outcome', saved=True, import_folder=import_folder)
             #save_import_simple(df, import_folder)
@@ -4895,7 +4895,6 @@ if __name__ == '__main__':
 
             #plot fig 2e for CR maps
             trial_mean, df_all = revision_data_processing(df_2, max_map=True, data_type='CR_outcome')
-        
         else:
             folder = import_folder+data_type+'/'
             #open
