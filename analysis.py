@@ -2313,49 +2313,49 @@ def import_dat_train(data_type, saved, import_folder):
                     elif '150' in file:
                         iterator_here = 50
 
-                    if 'block_30' in file: 
+                    if 'block_30' in file:
                         alg_type = [30]*num
                         id_b = 30000
-                    elif 'block_20' in file: 
+                    elif 'block_20' in file:
                         alg_type = [20]*num
                         id_b = 20000
-                    elif 'block_100' in file: 
+                    elif 'block_100' in file:
                         alg_type = [100]*num
                         id_b = 100000
-                    elif 'block_10' in file: 
+                    elif 'block_10' in file:
                         alg_type = [10]*num
                         id_b = 10000
-                    elif 'block_1' in file: 
+                    elif 'block_1' in file:
                         alg_type = [1]*num
                         id_b = 100000000
-                    elif 'random' in file: 
+                    elif 'random' in file:
                         alg_type = ['random']*num
                         id_b = 1000000
-                    elif 'block_40' in file: 
+                    elif 'block_40' in file:
                         alg_type = [40]*num
                         id_b = 40000
-                    elif 'block_70' in file: 
+                    elif 'block_70' in file:
                         alg_type = [70]*num
                         id_b = 70000
-                    elif 'block_5' in file: 
+                    elif 'block_5' in file:
                         alg_type = [5]*num
                         id_b = 50000
-                    elif 'prob40' in file: 
+                    elif 'prob40' in file:
                         alg_type = [40]*num
                         id_b = 40000
-                    elif 'prob4' in file: 
+                    elif 'prob4' in file:
                         alg_type = [4]*num
                         id_b = 30000
-                    elif 'prob10' in file: 
+                    elif 'prob10' in file:
                         alg_type = [10]*num
                         id_b = 20000
-                    elif 'prob20' in file: 
+                    elif 'prob20' in file:
                         alg_type = [20]*num
                         id_b = 100000
-                    elif 'prob30' in file: 
+                    elif 'prob30' in file:
                         alg_type = [30]*num
                         id_b = 10000
-                    else: 
+                    else:
                         alg_type = [50]*num
                         id_b = 0
 
@@ -3754,12 +3754,12 @@ def revision_data_processing(df, max_map, data_type):
         df_sel=df[['lim_type', 'trial_outcomes', 'len', 'id_here', 'locations', 'task_ids', 'probabilities_SR', 'probabilities_CR']]
 
     df_all = pd.DataFrame()
-    for lim_type in ['SR', 'joint_inf_priors']: #df_sel['lim_type'].unique()
+    for lim_type in df_sel['lim_type'].unique():
         #lim_type = 'SR'
         df_exp = df_sel[df_sel['lim_type']==lim_type]
         #df_exp = df_exp[df_exp['len'].isin([2,15,20])]
         #df_exp = df_exp[df_exp['id_here']==df_exp['id_here'].unique()[0]]
-        
+
         #expand to trials
         if lim_type == 'joint_inf_priors':
             df_exp=df_exp.explode(['trial_outcomes', 'locations', 'task_ids', 'probabilities_SR', 'probabilities_CR'])
@@ -3851,7 +3851,7 @@ def revision_data_processing(df, max_map, data_type):
         trial_mean = df_exp_3.groupby(['len', 'lim_type', 'id_here', 'task_ids', 'trial_num', 'attempt_num', 'locations', 'map_num']).mean() #mean within trial
         trial_mean = trial_mean.reset_index()
         #returns mean 'probabilities_SR', 'probabilities_CR' at each location 'locations' in each map 'map_num' in each task type 'task_ids'
-        
+
         with open(import_folder + data_type +'/trial_mean_all'+lim_type, "wb") as fp:  # Pickling
             pickle.dump(trial_mean, fp)
 
@@ -3873,14 +3873,14 @@ def revision_data_processing(df, max_map, data_type):
                 incorrect_probs['probabilities_CR']=0
 
             all_probs = pd.concat([correct_probs, incorrect_probs])
-            
+
             with open(import_folder +data_type+'/all_probs'+lim_type, "wb") as fp:  # Pickling
                 pickle.dump(all_probs, fp)
 
             df_all = pd.concat([df_all, all_probs])
 
     return trial_mean, df_all
-    
+
 
 def expand_diff(df):
     if sum(df['Switches'].values)!=0:
@@ -4025,15 +4025,27 @@ if __name__ == '__main__':
 
     if data_type in ['noise_revisions', 'cue_revisions']:
         add = data_type
-        df = import_dat_revisions(data_type, saved=True, import_folder=import_folder)
+        #if using direct output from algorithm
+        #df = import_dat_revisions(data_type, saved=True, import_folder=import_folder)
         #save_import_simple(df, import_folder)
 
         #supp 3-6
         plot_learning = True
         if plot_learning:
+            #import learning data
+            saved = True
+            if saved:
+                #open
+                df_sel = pd.read_pickle(import_folder + data_type +'/learning')
+            else:
+                #subselect what is needed for learning plots
+                df_sel=df[['lim_type', 'trial_outcomes', 'len', 'id_here']]
+                df_sel = df_sel[df_sel['len'].isin([2,15,20])]
+                with open(import_folder + data_type +'/learning', "wb") as fp:  # Pickling
+                    pickle.dump(df_sel, fp)
+
             # Learning curves
             # Plotting number of attempts over whole time course
-            df_sel=df[['lim_type', 'trial_outcomes', 'len', 'id_here']] #TODO save this to make it smaller
             df_exp=df_sel.explode(['trial_outcomes'])
             df_exp['trial_num'] = df_exp.groupby(['len', 'lim_type', 'id_here']).cumcount() + 1
             df_exp['trial_num'] = df_exp['trial_num'].astype('float')
@@ -4063,7 +4075,7 @@ if __name__ == '__main__':
             stats_me['trial_num'] = stats_me['trial_num'].astype('float')
             stats_out = pg.mixed_anova(dv='trial_outcomes', between='alg_type', within='len', subject='id_here', data=stats_me)
             post_hoc_out = pg.pairwise_tests(dv='trial_outcomes', between='alg_type', within='len', subject='id_here', data=stats_me, padjust='bonf', parametric=True, interaction=False)
-            
+
             #supp 5/6 top/block switch
             #plot performance on incongruent trials
             df_lens = df_exp[df_exp['len'].isin([2,15,20])]
@@ -4084,24 +4096,23 @@ if __name__ == '__main__':
 
             df_lens_incon['alg_type'] = df_lens_incon['lim_type']
 
-            #trial num stats
+            # trial num stats
             df_lens_incon2 = df_lens_incon[df_lens_incon['len'].isin([20])]
             stats_me = df_lens_incon2[['id_here', 'len', 'alg_type', 'trial_outcomes', 'trial_num']]
             stats_me['trial_outcomes'] = stats_me['trial_outcomes'].astype('float')
             stats_me['trial_num'] = stats_me['trial_num'].astype('float')
             out, out2 = anova_mixed_effects_x(stats_me, 'trial_num', 'trial_outcomes')
 
-            #length stats
-            df_lens_incon2 = df_lens_incon[df_lens_incon['len'].isin([2,15,20])]
+            # length stats
+            df_lens_incon2 = df_lens_incon[df_lens_incon['len'].isin([2, 15, 20])]
             stats_me = df_lens_incon2[['id_here', 'len', 'alg_type', 'trial_outcomes', 'trial_num']]
             stats_me['trial_outcomes'] = stats_me['trial_outcomes'].astype('float')
             stats_me['trial_num'] = stats_me['trial_num'].astype('float')
             out, out2 = anova_mixed_effects_x(stats_me, 'len', 'trial_outcomes')
-            
 
-            #supp 5/6 bottom within block
-            #performance on congruent trials
-            df_lens_con = df_lens[~df_lens['trial_num'].isin(np.arange(51,1000,50))]
+            # supp 5/6 bottom within block
+            # performance on congruent trials
+            df_lens_con = df_lens[~df_lens['trial_num'].isin(np.arange(51, 1000, 50))]
             df_lens_con['block'] = 0
 
             OG_start = 51
@@ -4124,7 +4135,7 @@ if __name__ == '__main__':
                 plt.tight_layout()
                 plt.savefig('figures/supp5_6_block' + str(len_here) + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
-            
+
             df_lens_2['alg_type'] = df_lens_2['lim_type']
             df_lens_incon2 = df_lens_2[df_lens_2['len'].isin([20])]
             stats_me = df_lens_incon2[['id_here', 'len', 'alg_type', 'trial_outcomes', 'block']]
@@ -4154,29 +4165,43 @@ if __name__ == '__main__':
 
         plot_probs = True
         if plot_probs:
-            saved_trials = True
-            #data in right format to calculate max map with specific parameters
-            if saved_trials:
-                #open
-                all_dat = pd.DataFrame()
-                for lim_type in ['joint_inf_priors', 'SR', 'outcome']:
-                    with open(import_folder +data_type+'/trial_mean_all'+lim_type, "rb") as fp:  # Unpickling# print(file)
-                        dat = pickle.load(fp)
-                    all_dat = pd.concat([all_dat, dat])
-                df_all = all_dat
-            else:
-                #calculate max map and get correct/incorrect labels
-                max_map = True
-                #get data into right format to calculate max map with specific parameters
-                max_map = False
-                trial_mean, df_all = revision_data_processing(df, max_map, data_type)
-
             # Question 1: How does supporting OI with FI during learning work?
             # supp 8/9
             # On first reversal (first reversal is most important: learning plots, incorrect updates, joint limits)
             # ->OI adapts faster by bigger inferred probs
             plot_Q1 = True
             if plot_Q1:
+                # if saved in reduced format
+                saved = True
+                # if saved in full format
+                saved_trials = False
+                if saved:
+                    #open
+                    if data_type == 'noise_revisions':
+                        all_dat = pd.read_pickle(import_folder + data_type + '/probs')
+                    if data_type == 'cue_revisions':
+                        all_dat_outcome = pd.read_pickle(import_folder + data_type + '/probs_outcome')
+                        all_dat_joint = pd.read_pickle(import_folder + data_type + '/probs_joint')
+                        all_dat_SR_1 = pd.read_pickle(import_folder + data_type + '/probs_SR_1')
+                        all_dat_SR_2 = pd.read_pickle(import_folder + data_type + '/probs_SR_2')
+                        all_dat = pd.concat([all_dat_outcome, all_dat_joint, all_dat_SR_1, all_dat_SR_2])
+                elif saved_trials:
+                    # open
+                    all_dat = pd.DataFrame()
+                    for lim_type in ['joint_inf_priors', 'SR', 'outcome']:
+                        with open(import_folder + data_type + '/trial_mean_all' + lim_type, "rb") as fp:  # Unpickling# print(file)
+                            dat = pickle.load(fp)
+                        all_dat = pd.concat([all_dat, dat])
+                    df_all = all_dat
+                    # save in condensed format
+                    all_dat = all_dat[all_dat['trial_num'].isin(np.concatenate([np.arange(51 - 50, 51 + 50), np.arange(951 - 50, 951 + 50)]))]
+                    all_dat = all_dat[all_dat['len'].isin([2, 15, 20])]
+                    with open(import_folder + data_type + '/probs', "wb") as fp:  # Pickling
+                        pickle.dump(all_dat, fp)
+                else:
+                    # get data into right format to calculate max map with specific parameters
+                    max_map = False
+                    trial_mean, df_all = revision_data_processing(df, max_map, data_type)
 
                 #select specific maps
                 def pick_max(trial_mean, type):
@@ -4225,7 +4250,7 @@ if __name__ == '__main__':
                     incorrect_probs = trial_mean[((trial_mean['map_num']==trial_mean['max_map1']) & (trial_mean['task_ids']==2)) | ((trial_mean['map_num']==trial_mean['max_map2']) & (trial_mean['task_ids']==1))]
                     incorrect_probs['correct'] = np.array([20]*len(incorrect_probs))+incorrect_probs['task_ids'].values
                     all_probs = pd.concat([correct_probs, incorrect_probs])
-                    
+
                     all_probs.loc[all_probs['lim_type']=='outcome', 'probabilities_SR'] = 0
                     all_probs.loc[all_probs['lim_type']=='SR', 'probabilities_CR'] = 0
                     return all_probs
@@ -4266,14 +4291,14 @@ if __name__ == '__main__':
                     first_att = first_rev[first_rev['attempt_num']==1]
                     #first_att = first_att[first_att['trial_outcomes']!=1] #pick out incorrect
                     first_att['locations'] = first_att['locations'].replace({6:3,7:4,8:5}) #get end arms all in to one
-                    probs_per_trial = first_att.groupby(['len', 'lim_type', 'id_here', 'correct', 'locations']).mean() #average across 
+                    probs_per_trial = first_att.groupby(['len', 'lim_type', 'id_here', 'correct', 'locations']).mean() #average across
                     probs_per_trial = probs_per_trial.reset_index()
                     probs_per_trial = probs_per_trial[['len', 'lim_type', 'id_here', 'correct', 'locations', 'probabilities_SR', 'probabilities_CR']]
                     df_plot = pd.melt(probs_per_trial, id_vars=['len', 'lim_type', 'id_here', 'correct', 'locations'])
                     df_plot = df_plot.reset_index()
 
                     df_plot = df_plot[((df_plot['lim_type']=='outcome') & (df_plot['variable']=='probabilities_CR')) | ((df_plot['lim_type']=='SR') & (df_plot['variable']=='probabilities_SR')) | (df_plot['lim_type']=='joint_inf_priors')]
-                    
+
                     inner_c = df_plot
                     for length in [2, 15, 20]:
                         for lim_types in [['SR', 'outcome'], ['joint_inf_priors']]:
@@ -4288,7 +4313,7 @@ if __name__ == '__main__':
                                         df_plot['locations'] = df_plot['locations'].replace({-102:add_on_loc+1,-103:add_on_loc+2,-104:add_on_loc+3,-105:add_on_loc+4}) #arms of maze
                                 df_plot = df_plot[df_plot['correct'].isin(corr_id)]
                                 df_plot = df_plot[df_plot['lim_type'].isin(lim_types)]
-                                
+
                                 df_plot['alg_type'] = df_plot['lim_type']
                                 df_plot.loc[df_plot['variable']=='probabilities_SR', 'lim_type']='SR'
                                 df_plot.loc[df_plot['variable']=='probabilities_CR', 'lim_type']='outcome'
@@ -4305,7 +4330,7 @@ if __name__ == '__main__':
                                     #show only SR for joint alg
                                     if lim_types == ['joint_inf_priors']:
                                         df_plot = df_plot[df_plot['lim_type']=='SR']
-                                if lim_types=='joint_inf_priors': 
+                                if lim_types=='joint_inf_priors':
                                     #select out only SRs, would be 40
                                     len_me = df_plot[df_plot['lim_type']=='SR']
                                     print(40-len(len_me['id_here'].unique())) #number of same map 1 vs map 2
@@ -4376,17 +4401,17 @@ if __name__ == '__main__':
             plot_Q2 = True
             if plot_Q2:
                 add=data_type
-                
+
                 def switch_prev(df):
                     prec = max(df['attempt_num'].unique())-1
                     df = df[df['attempt_num'] == prec]
-                    return df 
+                    return df
 
                 def expand_diff(df):
                     if sum(df['Switches'].values)!=0:
                         df['Switches'] = 1
                     return df
-                
+
                 def get_switches(df_rand):
                     df_rand['Switches'] = df_rand.groupby(['len', 'lim_type', 'id_here', 'trial_num', 'type']).diff()['task_ids']
                     #df_rand.loc[df_rand['trial_num'].isin([0,500,1400]), 'Switches'] = 0
@@ -4401,9 +4426,16 @@ if __name__ == '__main__':
                 #pull out max probs
                 saved=True
                 if saved:
-                    with open(import_folder +data_type+'/trial_max', "rb") as fp:  # Unpickling# print(file) #TODO generate trial max for noise
-                        trial_mean = pickle.load(fp)
+                    trial_mean = pd.read_pickle(import_folder +data_type+'/trial_max')
                 else:
+                    # open saved files
+                    all_dat = pd.DataFrame()
+                    for lim_type in ['joint_inf_priors', 'SR', 'outcome']:
+                        with open(import_folder + data_type + '/trial_mean_all' + lim_type, "rb") as fp:  # Unpickling# print(file)
+                            dat = pickle.load(fp)
+                        all_dat = pd.concat([all_dat, dat])
+                    df_all = all_dat
+                    #make into max
                     trial_mean = df_all
                     trial_mean = trial_mean[['len', 'lim_type', 'id_here', 'trial_num', 'probabilities_CR', 'probabilities_SR', 'trial_outcomes', 'attempt_num', 'task_ids', 'step_num']]
                     trial_mean = trial_mean.groupby(['len', 'lim_type', 'id_here', 'trial_num', 'attempt_num', 'step_num']).max() #max map probability  ~ confidence in estimate
@@ -4433,8 +4465,8 @@ if __name__ == '__main__':
                 data_types = pd.concat([first_rev, corr_block, block, corr_rand, rand])
                 data_types = data_types[['len', 'lim_type', 'id_here', 'type', 'trial_num', 'attempt_num', 'probabilities_SR']]
                 means=data_types.groupby(['len', 'lim_type', 'id_here', 'type']).mean()
-                means=means.reset_index() #TODO save means to save on space
-                
+                means=means.reset_index()
+
                 #difference/proportion
                 def difference_out_feat(df):
                     df.loc[df['lim_type']=='SR', 'differences'] = df[df['lim_type'] == 'outcome']['probabilities_SR'].values-df[df['lim_type']=='SR']['probabilities_SR'].values
@@ -4446,7 +4478,7 @@ if __name__ == '__main__':
                 means_diff = means.groupby(['len', 'type']).apply(difference_out_feat)
                 means_diff = means_diff.reset_index(drop=True)
 
-                #threshold as 95% confidence interval over type=random, len=20 
+                #threshold as 95% confidence interval over type=random, len=20
                 a = means_diff[(means_diff['type']=='rand') & ( means_diff['lim_type']=='joint_inf_priors') & (means_diff['len']==20)]['differences']
                 import statsmodels.stats.api as sms
                 threshold=sms.DescrStatsW(a).tconfint_mean()[1]
@@ -4461,7 +4493,7 @@ if __name__ == '__main__':
                 b_len = b['len'].values.tolist()
                 coef = np.polyfit(b_len,b_diff,1)
                 cross_rand = (threshold-coef[1])/coef[0]
-                
+
                 b = means_diff[(means_diff['type']=='block') & ( means_diff['lim_type']=='SR')]
                 b = b[['len', 'differences']]
                 b = b.groupby(['len']).mean()
@@ -4544,7 +4576,7 @@ if __name__ == '__main__':
                 plt.savefig('figures/supp_15_attemptsrand_pro' +add +'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
-                #blocks                
+                #blocks
                 trial_mean_rand = trial_sel[trial_sel['trial_num'].isin(np.arange(500,1000))]
                 trial_mean_rand = trial_mean_rand.groupby(['id_here', 'len', 'lim_type']).mean()
                 trial_mean_rand = trial_mean_rand.reset_index()
@@ -4593,7 +4625,7 @@ if __name__ == '__main__':
             add='cue'
         else:
             add='noise'
-        
+
         if saved:
             df = import_dat_train(data_type=add+'_'+type_change, saved=True, import_folder=import_folder)
             df_int = df
@@ -4603,13 +4635,13 @@ if __name__ == '__main__':
                 df1 = import_dat_train(data_type=add+'_'+type_change, saved=False, import_folder=import_folder)
                 df1=df1[df1['alg_type']!='random'] #drop prerun of random
                 df2 = import_dat_train(data_type=add+'_revisions', saved=False, import_folder=import_folder) #import data for blocks of 50
-                df4 = import_dat_train(data_type=add+'_block_1', saved=False, import_folder=import_folder) 
+                df4 = import_dat_train(data_type=add+'_block_1', saved=False, import_folder=import_folder)
                 df = pd.concat([df1,df2,df4])
                 save_import_simple(df, import_folder)
             else:
                 df1 = import_dat_train(data_type=add+'_'+type_change, saved=False, import_folder=import_folder)
                 df2 = import_dat_train(data_type=add+'_revisions', saved=False, import_folder=import_folder) #import data for blocks of 50
-                df3 = import_dat_train(data_type='random_'+add, saved=False, import_folder=import_folder) 
+                df3 = import_dat_train(data_type='random_'+add, saved=False, import_folder=import_folder)
                 df = pd.concat([df1,df2,df3])
                 save_import_simple(df, import_folder)
 
@@ -4758,7 +4790,7 @@ if __name__ == '__main__':
                     df_plot2 = df_exp[df_exp['Switches']!=0] #where switches occur
                     #label switch number
                     df_plot2['switch_num'] = df_plot2.groupby(['len', 'lim_type', 'alg_type', 'id_here']).cumcount()
-                    
+
                     #plot
                     df_plot2=df_plot2[df_plot2['switch_num'].isin(np.arange(0,19))]
                     sns.lineplot(x='switch_num', y='trial_outcomes', hue='alg_type', data=df_plot2, legend=False, palette=palette_here2, estimator=np.median, marker='o')
@@ -4842,7 +4874,7 @@ if __name__ == '__main__':
                     sns.despine()
                     plt.savefig('figures/blocksw' + type_change+lim_types + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                     plt.show()
-                    
+
                     stats_me = df_lens_incon[['id_here', 'alg_type', 'trial_outcomes', 'switch_num']]
                     stats_me=stats_me[stats_me['switch_num'].isin(np.arange(0,19))]
                     stats_me['switch_num'] = stats_me['switch_num'].astype('float')
