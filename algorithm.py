@@ -2710,7 +2710,7 @@ def run_multiple(joint_prior, joint_inf, replay, kalman_replay, out_cov, feat_co
 
 def chosen_ones(i):
     # define data type here!
-    data_type = 'noise_block_1' # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
+    data_type = 'noise' # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS
     # for different setups data_type in ['random', 'block_10', 'block_20', 'block_30', 'block_40']
 
     if 'noise' in data_type:
@@ -3122,10 +3122,11 @@ if __name__ == '__main__':
         arm_lengths_here = [3]
         groups_here = ['switching_SR', 'joint_inf_priors']
 
-    # testing for different training structures
+    # generating CR maps
     if data_type in ['cue_CR_outcome', 'noise_CR_outcome']:
         groups_here = ['outcome']
-
+    
+    # testing for different training structures
     if data_type in ['cue_random', 'cue_block_5', 'cue_block_10', 'cue_block_20', 'cue_block_30', 'cue_block_40', 'noise_random', 'noise_block_5', 'noise_block_10', 'noise_block_20', 'noise_block_30', 'noise_block_40', 'noise_block_70', 'noise_block_100', 'cue_block_70', 'cue_block_100', 'cue_block_1', 'noise_block_1']:
         groups_here = ['switching_SR', 'joint_inf_priors', 'outcome']
 

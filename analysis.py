@@ -3894,9 +3894,6 @@ if __name__ == '__main__':
     data_type = 'struct_disc'  # in cue_SRstart, noise_SRstart, noise, cue, fig_1, other_noise, other_cue, struct_disc, DNMS; for revisions: 'noise_revisions', 'cue_revisions', 'cue_dist', 'noise_dist', 'noise_train', 'cue_train', 'noise_probs', 'cue_probs', 'CR_outcome'
     import_folder = 'Data/'  # folder/file management is setup for mac
 
-    import_folder = '/exports/eddie/scratch/jpasslac/successor/'
-    data_type = 'noise_revisions'
-
     # each data_type uses a different set of output files from the algorithm to run, see comments within for which figures will be generated
     if data_type == 'cue_SRstart':
         # this dataset has all of the data in it apart from outcome
@@ -4025,9 +4022,6 @@ if __name__ == '__main__':
 
     if data_type in ['noise_revisions', 'cue_revisions']:
         add = data_type
-        #if using direct output from algorithm
-        #df = import_dat_revisions(data_type, saved=True, import_folder=import_folder)
-        #save_import_simple(df, import_folder)
 
         #supp 3-6
         plot_learning = True
@@ -4039,6 +4033,9 @@ if __name__ == '__main__':
                 df_sel = pd.read_pickle(import_folder + data_type +'/learning')
             else:
                 #subselect what is needed for learning plots
+                #if using direct output from algorithm
+                df = import_dat_revisions(data_type, saved=True, import_folder=import_folder)
+                #save_import_simple(df, import_folder)
                 df_sel=df[['lim_type', 'trial_outcomes', 'len', 'id_here']]
                 df_sel = df_sel[df_sel['len'].isin([2,15,20])]
                 with open(import_folder + data_type +'/learning', "wb") as fp:  # Pickling
@@ -4050,6 +4047,7 @@ if __name__ == '__main__':
             df_exp['trial_num'] = df_exp.groupby(['len', 'lim_type', 'id_here']).cumcount() + 1
             df_exp['trial_num'] = df_exp['trial_num'].astype('float')
             df_exp['len'] = df_exp['len'].astype('float')
+            df_for_supp15 = df_exp
             df_exp = df_exp[df_exp['trial_num']<1000]
 
             #Supp 3/4:
@@ -4091,7 +4089,7 @@ if __name__ == '__main__':
                 plt.gca().set_ylim(bottom=0)
                 plt.tight_layout()
                 sns.despine()
-                plt.savefig('figures/supp5_6_switch' + str(len_here + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
+                plt.savefig('figures/supp5_6_switch' + str(len_here) + add+'.pdf', dpi=500, bbox_inches='tight', format='pdf')
                 plt.show()
 
             df_lens_incon['alg_type'] = df_lens_incon['lim_type']
@@ -4121,6 +4119,7 @@ if __name__ == '__main__':
                 df_lens_con.loc[(df_lens_con['trial_num']>OG_start) & (df_lens_con['trial_num']<OG_end), 'block'] = block
                 OG_start = OG_start+50
                 OG_end = OG_end+50
+            df_lens_con = df_lens_con[['lim_type', 'len', 'id_here', 'block', 'trial_outcomes']]
             df_lens_2 = df_lens_con.groupby(['lim_type', 'len', 'id_here', 'block']).mean()
             df_lens_2 = df_lens_2.reset_index()
 
@@ -4525,6 +4524,8 @@ if __name__ == '__main__':
                 #pre hoc Linear Mixed Effects Model
                 stats_me = stats_me[['differences', 'type', 'lim_type', 'len', 'id_here']]
                 stats_me.columns = ['differences', 'trial_type', 'lim_type', 'len', 'id_here']
+                stats_me['lim_type'] = stats_me['lim_type'].astype('category')
+                stats_me['trial_type'] = stats_me['trial_type'].astype('category')
                 stats_me['differences'] = stats_me['differences'].astype('float')
                 md = smf.mixedlm("differences ~ lim_type * len * trial_type", stats_me, groups=stats_me['id_here'])
                 mdf = md.fit()
@@ -4536,6 +4537,7 @@ if __name__ == '__main__':
 
 
                 #generate performance plots of SR vs outcome on block/random w threshold line
+                df_all = trial_mean
                 trial_sel = df_all[['id_here', 'len', 'lim_type', 'trial_num', 'trial_outcomes']]
                 trial_sel = trial_sel.groupby(['id_here', 'len', 'lim_type', 'trial_num']).mean()
                 trial_sel = trial_sel.reset_index()
@@ -4581,7 +4583,11 @@ if __name__ == '__main__':
                 trial_mean_rand = trial_mean_rand.groupby(['id_here', 'len', 'lim_type']).mean()
                 trial_mean_rand = trial_mean_rand.reset_index()
                 palette_plots = format_plot()
-                sns.lineplot(x='len', y='trial_outcomes', hue='lim_type', legend=False, data=trial_mean_rand, palette=palette_plots, estimator = np.median, marker='o')
+                if add=='noise_revisions':
+                    plotter_est = np.mean
+                else:
+                    plotter_est = np.median
+                sns.lineplot(x='len', y='trial_outcomes', hue='lim_type', legend=False, data=trial_mean_rand, palette=palette_plots, estimator = plotter_est, marker='o')
                 if add=='noise_revisions':
                     plt.axvline(12.7, color = 'k')
                 else:
@@ -4929,10 +4935,12 @@ if __name__ == '__main__':
 
             #plot fig 2e for CR maps
             trial_mean, df_all = revision_data_processing(df_2, max_map=True, data_type='CR_outcome')
+            with open(import_folder +data_type+'/all_probsoutcome', "wb") as fp:  # Pickling
+                pickle.dump(df_all, fp)
         else:
             folder = import_folder+data_type+'/'
             #open
-            with open(import_folder +'all_probsoutcome', "rb") as fp:  # Unpickling# print(file)
+            with open(folder +'all_probsoutcome', "rb") as fp:  # Unpickling# print(file)
                 all_dat = pickle.load(fp)
 
         def plot_grid(max_cell_list, task, alg):
@@ -4992,4 +5000,3 @@ if __name__ == '__main__':
         plot_grid(locations_task1, task = 1, alg=lim_type)
         print('task_2')
         plot_grid(locations_task2, task = 2, alg=lim_type)
-
