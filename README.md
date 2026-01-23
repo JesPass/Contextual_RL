@@ -3,6 +3,7 @@
 Algorithm implementation, data and analysis code for Passlack J & MacAskill A (2025) Contextual inference through flexible integration of environmental features and behavioural outcomes. *bioRxiv* doi: https://doi.org/10.1101/2025.05.28.656607
 
 ## How to use
+Details of anaconda environment used in requirements.txt
 
 ### Running models
 In order to run the models using `algorithm.py`:
