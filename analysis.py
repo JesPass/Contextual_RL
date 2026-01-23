@@ -4734,10 +4734,12 @@ if __name__ == '__main__':
             df_props = df_plot[['len', 'alg_type', 'id_here']]
             df_props = df_props.groupby(['len', 'alg_type']).count()/40
             df_props = df_props.reset_index()
-            if add=='cue':
-                if lim_types=='outcome':
-                    df_add = pd.DataFrame({'len':[20],'alg_type':[40],'id_here':[0]})
-                    df_props=pd.concat([df_props,df_add])
+            # if proportion 0 set to 0
+            if type_change == 'probs':
+                if add=='cue':
+                    if lim_types=='outcome':
+                        df_add = pd.DataFrame({'len':[20],'alg_type':[40],'id_here':[0]})
+                        df_props=pd.concat([df_props,df_add])
 
             sns.pointplot(x='alg_type', y='id_here', hue='len', data=df_props, legend=False, palette=palette_here, estimator=estimate_me, dodge=True)
             if type_change == 'train':
